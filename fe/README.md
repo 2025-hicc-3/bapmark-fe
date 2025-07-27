@@ -1,69 +1,99 @@
-# React + TypeScript + Vite
+# 🍽️ BapMark - 맛집 지도 공유 서비스
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+모바일 웹 기반의 맛집 지도 공유 서비스입니다. 카카오 지도 API를 활용하여 맛집을 저장하고, 스탬프 시스템으로 방문 기록을 관리하며, 다른 사용자와 맛집 정보를 공유할 수 있습니다.
 
-Currently, two official plugins are available:
+## ✨ 주요 기능
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🗺️ 지도 기능
 
-## Expanding the ESLint configuration
+- 카카오 지도 API 연동
+- 맛집 검색 및 저장
+- 스탬프북 위치 표시
+- 다른 사용자 게시물을 통한 맛집 저장
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📝 게시판 기능
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- 위치 정보가 포함된 게시물 작성
+- 다른 사용자 게시물 조회
+- 게시물을 통한 맛집 저장
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### 🏷️ 스탬프 시스템
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- 다녀온 맛집에 스탬프 찍기
+- 최대 10개 장소까지 스탬프북 저장
+- 스탬프북 목록 관리
+- 스탬프북 공유 기능
+
+### 👤 사용자 인증
+
+- 구글 로그인 연동
+
+## 🚀 시작하기
+
+### 필수 요구사항
+
+- Node.js 18.0.0 이상
+- npm 또는 yarn
+
+### 설치 및 실행
+
+1. **의존성 설치**
+
+   ```bash
+   npm install
+   ```
+
+2. **개발 서버 실행**
+
+   ```bash
+   npm run dev
+   ```
+
+## 🛠️ 기술 스택
+
+### Frontend
+
+- **React 18** - UI 라이브러리
+- **TypeScript** - 정적 타입 지원
+- **Vite** - 빌드 도구 및 개발 서버
+- **Tailwind CSS** - 유틸리티 기반 CSS 프레임워크
+- **React Router DOM** - 클라이언트 사이드 라우팅
+
+### 상태 관리 & 데이터 페칭
+
+- **Zustand** - 클라이언트 상태 관리
+- **TanStack Query (React Query)** - 서버 상태 및 비동기 데이터 관리
+
+### 코드 품질
+
+- **ESLint** - 코드 린팅
+- **Prettier** - 코드 포맷팅
+
+### 외부 API
+
+- **카카오 지도 API** - 지도 서비스
+- **Google OAuth** - 사용자 인증
+
+## 📁 프로젝트 구조
+
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+src/
+├── components/          # 재사용 가능한 컴포넌트
+│   ├── layout/         # 레이아웃 컴포넌트 (Header, Navigation)
+│   └── map/           # 지도 관련 컴포넌트
+├── pages/              # 페이지 컴포넌트
+│   ├── MapPage/       # 지도 페이지
+│   ├── BoardPage/     # 게시판 페이지
+│   ├── StampBookPage/ # 스탬프북 페이지
+│   ├── MyPage/        # 마이페이지
+│   └── LoginPage/     # 로그인 페이지
+├── store/              # Zustand 스토어
+├── services/           # API 서비스 및 설정
+├── hooks/              # 커스텀 훅
+├── types/              # TypeScript 타입 정의
+├── utils/              # 유틸리티 함수
+├── assets/             # 정적 자산 (이미지, 아이콘 등)
+├── App.tsx            # 메인 앱 컴포넌트
+├── main.tsx           # 앱 진입점
+└── index.css          # 글로벌 스타일
 ```
