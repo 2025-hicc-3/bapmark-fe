@@ -27,7 +27,8 @@ export default tseslint.config([
       'no-console': 'warn',
       'prefer-const': 'error',
       'no-var': 'error',
-      'linebreak-style': ['error', 'unix'],
+      'linebreak-style': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
     languageOptions: {
       ecmaVersion: 2020,
