@@ -22,11 +22,12 @@ export default tseslint.config([
       prettier: prettier,
     },
     rules: {
-      'prettier/prettier': 'error',
+      'prettier/prettier': 'off',
       'no-unused-vars': 'warn',
       'no-console': 'warn',
       'prefer-const': 'error',
       'no-var': 'error',
+      'linebreak-style': ['error', 'unix'],
     },
     languageOptions: {
       ecmaVersion: 2020,

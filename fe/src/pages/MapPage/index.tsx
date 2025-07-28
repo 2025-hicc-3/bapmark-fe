@@ -12,14 +12,14 @@ const MapPage = () => {
   ];
 
   return (
-    <div className='h-screen flex flex-col'>
+    <div className="h-screen flex flex-col">
       {/* 헤더 */}
       <Header />
 
       {/* 메인 콘텐츠 영역 */}
-      <main className='main-content bg-gray-50'>
+      <main className="main-content bg-gray-50">
         {/* 지도 영역 (임시로 배경색으로 표현) */}
-        <div className='w-full h-full bg-gray-100 relative'>
+        <div className="w-full h-full bg-gray-100 relative">
           {/* 지도 마커들 */}
           {markers.map((marker, index) => (
             <MapMarker
@@ -32,9 +32,9 @@ const MapPage = () => {
           ))}
 
           {/* 우측 하단 스탬프 아이콘 */}
-          <div className='absolute bottom-20 right-4'>
-            <div className='w-6 h-6 bg-red-500 rounded-full flex items-center justify-center'>
-              <div className='w-6 h-6 border-2 border-black rounded-full'></div>
+          <div className="absolute bottom-20 right-4">
+            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-black rounded-full"></div>
             </div>
           </div>
         </div>
