@@ -22,7 +22,7 @@ export default tseslint.config([
       prettier: prettier,
     },
     rules: {
-      'prettier/prettier': 'off',
+      'prettier/prettier': 'error',
       'no-unused-vars': 'warn',
       'no-console': 'warn',
       'prefer-const': 'error',

@@ -23,4 +23,4 @@ const MapTestPage = () => {
   );
 };
 
-export default MapTestPage; 
+export default MapTestPage;

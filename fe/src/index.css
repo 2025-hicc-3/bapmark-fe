@@ -70,7 +70,6 @@ button {
   font-size: 16px; /* 모바일에서 최소 16px 권장 */
   font-weight: 500;
   font-family: inherit;
-  background-color: #f9f9f9;
   cursor: pointer;
   transition: all 0.2s ease;
   /* 모바일 터치 최적화 */
@@ -84,11 +83,6 @@ button:hover {
   border-color: #646cff;
 }
 
-button:focus,
-button:focus-visible {
-  outline: 2px solid #646cff;
-  outline-offset: 2px;
-}
 
 /* 모바일 최적화된 링크 스타일 */
 a {
@@ -156,7 +150,7 @@ img {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding-top: 60px; /* 헤더 높이만큼 상단 여백 */
+  padding-top: 100px; /* 헤더 높이(100px)만큼 상단 여백 */
   padding-bottom: 80px; /* 네비게이션 높이만큼 하단 여백 */
   -webkit-overflow-scrolling: touch;
 }

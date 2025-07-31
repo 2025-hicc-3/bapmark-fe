@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MapPage from './pages/MapPage';
 import MapTestPage from './pages/MapTestPage';
 import BoardPage from './pages/BoardPage';
+import BoardDetailPage from './pages/BoardDetailPage';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path='/' element={<MapPage />} />
         <Route path='/map' element={<MapPage />} />
         <Route path='/board' element={<BoardPage />} />
+        <Route path='/board/:id' element={<BoardDetailPage />} />
         <Route path='/maptest' element={<MapTestPage />} />
       </Routes>
     </BrowserRouter>
