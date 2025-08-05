@@ -38,7 +38,7 @@ const BoardDetailPage = () => {
       <HeaderWithoutSearch />
 
       {/* 메인 콘텐츠 */}
-      <main className="main-content flex-1 pt-15 pb-16">
+      <main className="main-content-no-search flex-1 pt-15 pb-16">
         <div className="p-4 space-y-4">
           {/* 뒤로가기 버튼과 제목 */}
           <div className="flex items-center space-x-3">

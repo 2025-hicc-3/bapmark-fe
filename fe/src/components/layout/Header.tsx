@@ -28,7 +28,7 @@ const Header = () => {
     <>
       <header
         className="fixed-header bg-white border-b border-gray-200 px-4 py-3"
-        style={{ height: '100px' }}
+        style={{ minHeight: '100px' }}
       >
         <div className="flex items-center justify-between">
           {/* 로고 */}
@@ -64,7 +64,7 @@ const Header = () => {
           <div className="relative">
             <input
               type="text"
-              className="w-full px-4 py-2 pl-10 bg-gray-50 border-[3px] border-black rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 pl-10 bg-gray-50 border-[3px] border-black rounded-full text-sm "
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"></div>
           </div>
