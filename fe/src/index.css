@@ -65,14 +65,11 @@ p, span, div, h1, h2, h3, h4, h5, h6 {
 /* 모바일 최적화된 버튼 스타일 */
 button {
   border: 1px solid transparent;
-  padding: 12px 16px;
   font-size: 16px; /* 모바일에서 최소 16px 권장 */
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
   /* 모바일 터치 최적화 */
-  min-height: 44px; /* iOS 권장 최소 터치 영역 */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
