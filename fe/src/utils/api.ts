@@ -10,8 +10,9 @@ interface ApiResponse<T = any> {
 class ApiClient {
   private baseURL: string;
 
-  constructor(baseURL: string = '/api') {
-    this.baseURL = baseURL;
+  constructor(baseURL?: string) {
+    // 환경 변수에서 API URL을 가져오거나 기본값 사용
+    this.baseURL = baseURL || import.meta.env.VITE_API_BASE_URL || '/api';
   }
 
   private getAuthHeaders(): Record<string, string> {
@@ -118,7 +119,7 @@ class ApiClient {
   }
 }
 
-// 기본 API 클라이언트 인스턴스
+// 기본 API 클라이언트 인스턴스 - 환경 변수 사용
 export const apiClient = new ApiClient();
 
 // 사용 예시를 위한 타입 정의
