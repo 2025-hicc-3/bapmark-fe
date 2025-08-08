@@ -1,34 +1,160 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Header from '../../components/layout/Header';
 import Navigation from '../../components/layout/Navigation';
+import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
+import fillMarkIcon from '../../assets/icons/fill_mark.svg';
+import { colorPalette } from '../../components/stampbook/colorPalette';
+import PlaceDetailModal from '../../components/map/PlaceDetailModal';
+
+interface Place {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  isVisited: boolean;
+  address?: string;
+  sourceTitle?: string;
+  sourceContent?: string;
+}
+
+interface Stamp {
+  id: string;
+  name: string;
+  color: string;
+  locations: Place[];
+}
 
 const MapPage = () => {
   const apiKey = import.meta.env.VITE_KAKAO_MAP_API_KEY;
   const mapRef = useRef<HTMLDivElement>(null);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [showPlaceDetail, setShowPlaceDetail] = useState(false);
 
-  // 피그마 디자인에서 확인한 마커 위치들 (위도, 경도로 변환)
-  const markers = [
+  // 모든 스탬프 데이터 (StampModal에서 가져온 데이터)
+  const stamps: Stamp[] = [
     {
-      name: '카미야',
-      lat: 37.5665,
-      lng: 126.978,
-      isVisited: true,
+      id: '1',
+      name: '카페 스탬프',
+      color: colorPalette[0], // 첫 번째 색상 사용
+      locations: [
+        {
+          id: '1',
+          name: '스타벅스 강남점',
+          lat: 37.5665,
+          lng: 126.978,
+          isVisited: true,
+          address: '서울 강남구 강남대로 396',
+          sourceTitle: '카페 리뷰',
+          sourceContent: '강남역 근처 스타벅스입니다.',
+        },
+        {
+          id: '2',
+          name: '투썸플레이스 홍대점',
+          lat: 37.5575,
+          lng: 126.925,
+          isVisited: false,
+          address: '서울 마포구 홍대로 123',
+          sourceTitle: '카페 추천',
+          sourceContent: '홍대입구역 근처 투썸플레이스입니다.',
+        },
+        {
+          id: '3',
+          name: '할리스 커피 신촌점',
+          lat: 37.5595,
+          lng: 126.943,
+          isVisited: false,
+          address: '서울 서대문구 신촌로 123',
+          sourceTitle: '카페 정보',
+          sourceContent: '신촌역 근처 할리스 커피입니다.',
+        },
+      ],
     },
     {
-      name: '한신포차',
-      lat: 37.5675,
-      lng: 126.979,
-      isVisited: false,
+      id: '2',
+      name: '맛집 스탬프',
+      color: colorPalette[1], // 두 번째 색상 사용
+      locations: [
+        {
+          id: '6',
+          name: '맛있는 치킨집',
+          lat: 37.5725,
+          lng: 126.985,
+          isVisited: true,
+          address: '서울 강남구 테헤란로 456',
+          sourceTitle: '맛집 리뷰',
+          sourceContent: '강남역 근처 맛있는 치킨집입니다.',
+        },
+        {
+          id: '7',
+          name: '피자나라',
+          lat: 37.5535,
+          lng: 126.935,
+          isVisited: false,
+          address: '서울 마포구 와우산로 789',
+          sourceTitle: '피자 맛집',
+          sourceContent: '홍대입구역 근처 피자나라입니다.',
+        },
+        {
+          id: '8',
+          name: '스시로',
+          lat: 37.5685,
+          lng: 126.988,
+          isVisited: true,
+          address: '서울 강남구 강남대로 321',
+          sourceTitle: '스시 맛집',
+          sourceContent: '강남역 근처 스시로입니다.',
+        },
+      ],
     },
     {
-      name: '가미우동',
-      lat: 37.5685,
-      lng: 126.98,
-      isVisited: true,
+      id: '3',
+      name: '일식집 스탬프',
+      color: colorPalette[2], // 세 번째 색상 사용
+      locations: [
+        {
+          id: '9',
+          name: '스시로',
+          lat: 37.5515,
+          lng: 126.988,
+          isVisited: true,
+          address: '서울 강남구 논현로 654',
+          sourceTitle: '스시 맛집',
+          sourceContent: '논현역 근처 스시로입니다.',
+        },
+        {
+          id: '10',
+          name: '우동집',
+          lat: 37.5475,
+          lng: 126.915,
+          isVisited: false,
+          address: '서울 마포구 동교로 987',
+          sourceTitle: '우동 맛집',
+          sourceContent: '홍대입구역 근처 우동집입니다.',
+        },
+        {
+          id: '11',
+          name: '라멘집',
+          lat: 37.5795,
+          lng: 126.991,
+          isVisited: true,
+          address: '서울 강남구 삼성로 147',
+          sourceTitle: '라멘 맛집',
+          sourceContent: '삼성역 근처 라멘집입니다.',
+        },
+      ],
     },
   ];
+
+  // 모든 장소를 하나의 배열로 합치기
+  const allPlaces = stamps.flatMap((stamp) =>
+    stamp.locations.map((place) => ({
+      ...place,
+      stampName: stamp.name,
+      stampColor: stamp.color,
+    }))
+  );
 
   // 카카오맵 SDK 로드 함수 (KakaoMapTest 방식 적용)
   const loadKakaoMapSDK = () => {
@@ -94,18 +220,52 @@ const MapPage = () => {
 
           const kakaoMap = new kakao.maps.Map(container, options);
 
-          // 마커들 추가
-          markers.forEach((marker) => {
-            const position = new kakao.maps.LatLng(marker.lat, marker.lng);
+          // 모든 장소에 마커 추가
+          allPlaces.forEach((place) => {
+            const position = new kakao.maps.LatLng(place.lat, place.lng);
+
+            // 방문 상태에 따라 다른 아이콘 사용
+            const iconSrc = place.isVisited ? fillMarkIcon : emptyMarkIcon;
+            const markerImage = new kakao.maps.MarkerImage(
+              iconSrc,
+              new kakao.maps.Size(16, 16)
+            );
+
             const kakaoMarker = new kakao.maps.Marker({
               position: position,
               map: kakaoMap,
+              image: markerImage,
+            });
+
+            // 장소 이름을 표시하는 커스텀 오버레이 생성
+            const placeNameElement = document.createElement('div');
+            placeNameElement.className = 'place-name-overlay';
+            placeNameElement.style.cssText = `
+              position: absolute;
+              background: rgba(0, 0, 0, 0.8);
+              color: white;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              white-space: nowrap;
+              transform: translateX(-50%);
+              margin-top: 8px;
+              z-index: 1000;
+            `;
+            placeNameElement.textContent = place.name;
+
+            new kakao.maps.CustomOverlay({
+              position: position,
+              content: placeNameElement,
+              map: kakaoMap,
+              yAnchor: 0,
             });
 
             // 마커 클릭 이벤트
             kakao.maps.event.addListener(kakaoMarker, 'click', function () {
-              console.log(`${marker.name} 마커 클릭됨`);
-              // TODO: 마커 클릭 시 상세 정보 표시
+              console.log(`${place.name} 마커 클릭됨`);
+              setSelectedPlace(place);
+              setShowPlaceDetail(true);
             });
           });
         });
@@ -116,7 +276,21 @@ const MapPage = () => {
     };
 
     initMap();
-  }, [apiKey, markers]);
+  }, [apiKey, allPlaces]);
+
+  const handleKakaoMap = () => {
+    if (selectedPlace) {
+      const url = `https://map.kakao.com/link/map/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleNaverMap = () => {
+    if (selectedPlace) {
+      const url = `https://map.naver.com/p/search/${selectedPlace.name}`;
+      window.open(url, '_blank');
+    }
+  };
 
   if (!apiKey) {
     return (
@@ -172,6 +346,17 @@ const MapPage = () => {
 
       {/* 하단 네비게이션 */}
       <Navigation />
+
+      {/* 장소 상세 정보 모달 */}
+      {selectedPlace && (
+        <PlaceDetailModal
+          place={selectedPlace}
+          isOpen={showPlaceDetail}
+          onClose={() => setShowPlaceDetail(false)}
+          onKakaoMap={handleKakaoMap}
+          onNaverMap={handleNaverMap}
+        />
+      )}
     </div>
   );
 };

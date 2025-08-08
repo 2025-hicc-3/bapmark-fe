@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import shareIcon from '../../assets/icons/share.svg';
 import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
+import fillMarkIcon from '../../assets/icons/fill_mark.svg';
 
 interface Place {
   id: string;
@@ -117,9 +118,10 @@ const StampMap: React.FC<StampMapProps> = ({
           stampBook.places.forEach((place) => {
             const position = new kakao.maps.LatLng(place.lat, place.lng);
 
-            // empty_mark 아이콘을 사용한 커스텀 마커 생성
+            // 방문 상태에 따라 다른 아이콘 사용
+            const iconSrc = place.isVisited ? fillMarkIcon : emptyMarkIcon;
             const markerImage = new kakao.maps.MarkerImage(
-              emptyMarkIcon,
+              iconSrc,
               new kakao.maps.Size(32, 32)
             );
 
