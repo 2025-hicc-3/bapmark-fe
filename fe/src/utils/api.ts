@@ -148,7 +148,7 @@ export interface Post {
 export const authAPI = {
   // Google 로그인
   googleLogin: (idToken: string) =>
-    apiClient.post<{ jwt: string }>('/auth/google', { idToken }),
+    apiClient.post<{ accessToken: string }>('/auth/google', { idToken }),
 
   // 사용자 정보 조회
   getMe: () => apiClient.get<User>('/user/me'),

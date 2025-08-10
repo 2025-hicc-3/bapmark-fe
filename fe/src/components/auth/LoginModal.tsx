@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { authAPI } from '../../utils/api';
 import loginIcon from '../../assets/icons/login.svg';
 import stampIcon from '../../assets/icons/stamp.svg';
 
@@ -22,56 +23,41 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      // Google OAuth 클라이언트 초기화 (실제 구현 시 Google OAuth 라이브러리 필요)
-      // @ts-expect-error - Google OAuth 타입 정의가 없어서 임시로 사용
-      if (typeof google !== 'undefined' && google.accounts) {
-        // @ts-expect-error - Google OAuth 클라이언트 타입이 정의되지 않음
-        const client = google.accounts.oauth2.initTokenClient({
+      // Google Identity Services - ID 토큰 사용
+      if (
+        typeof window !== 'undefined' &&
+        (window as any).google?.accounts?.id
+      ) {
+        const googleObj = (window as any).google;
+        googleObj.accounts.id.initialize({
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          scope: 'openid email profile',
           callback: async (response: any) => {
             try {
-              // Google에서 받은 ID Token을 백엔드로 전송
-              const jwtResponse = await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  idToken: response.access_token,
-                }),
-              });
+              const idToken = response.credential; // ID Token (JWT)
 
-              if (!jwtResponse.ok) {
+              const { data, error } = await authAPI.googleLogin(idToken);
+              if (error || !data) {
                 throw new Error('인증 실패');
               }
+              const { accessToken } = data;
 
-              const { jwt } = await jwtResponse.json();
-
-              // JWT를 로컬스토리지에 저장
-              localStorage.setItem('accessToken', jwt);
-
-              // 로그인 상태 업데이트
+              localStorage.setItem('accessToken', accessToken);
               setIsLoggedIn(true);
               setIsLoading(false);
-
-              // 모달 닫기
               onClose();
-            } catch (error) {
-              console.error('로그인 실패:', error);
+            } catch {
               setIsLoading(false);
               alert('로그인에 실패했습니다. 다시 시도해주세요.');
             }
           },
         });
 
-        client.requestAccessToken();
+        // 원탭 프롬프트 표시
+        googleObj.accounts.id.prompt();
       } else {
-        // Google OAuth 라이브러리가 로드되지 않은 경우
         throw new Error('Google OAuth 라이브러리를 로드할 수 없습니다.');
       }
-    } catch (error) {
-      console.error('Google 로그인 초기화 실패:', error);
+    } catch {
       setIsLoading(false);
       alert('Google 로그인을 초기화할 수 없습니다.');
     }

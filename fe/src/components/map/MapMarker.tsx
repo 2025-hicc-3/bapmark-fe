@@ -15,7 +15,7 @@ const MapMarker: React.FC<MapMarkerProps> = ({
 }) => {
   return (
     <div
-      className='absolute flex flex-col items-center'
+      className="absolute flex flex-col items-center"
       style={{ left: x, top: y }}
     >
       {/* 마커 원 */}
@@ -24,7 +24,7 @@ const MapMarker: React.FC<MapMarkerProps> = ({
       />
 
       {/* 장소 이름 */}
-      <span className='text-xs text-black mt-1 whitespace-nowrap'>{name}</span>
+      <span className="text-xs text-black mt-1 whitespace-nowrap">{name}</span>
     </div>
   );
 };
