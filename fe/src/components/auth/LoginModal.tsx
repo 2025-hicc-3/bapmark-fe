@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { authAPI } from '../../utils/api';
+import { useAuth } from '../../store/AuthContext';
+import type { User } from '../../types/auth';
 import loginIcon from '../../assets/icons/login.svg';
 import stampIcon from '../../assets/icons/stamp.svg';
 
@@ -9,8 +11,8 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { isLoggedIn, login, logout, user } = useAuth();
 
   if (!isOpen) return null;
 
@@ -33,16 +35,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
           callback: async (response: any) => {
             try {
-              const idToken = response.credential; // ID Token (JWT)
+              const idToken = response.credential; // ID 토큰 (JWT)
 
               const { data, error } = await authAPI.googleLogin(idToken);
               if (error || !data) {
                 throw new Error('인증 실패');
               }
-              const { accessToken } = data;
 
-              localStorage.setItem('accessToken', accessToken);
-              setIsLoggedIn(true);
+              // 실제 API 응답에서 사용자 정보를 받아와서 로그인
+              login(data.accessToken, data.user);
               setIsLoading(false);
               onClose();
             } catch {
@@ -63,10 +64,41 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // 테스트용 로그인 함수 - API 시뮬레이션
+  const handleTestLogin = async () => {
+    setIsLoading(true);
+
+    try {
+      // API 호출을 시뮬레이션 (실제로는 네트워크 요청 없음)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 실제 API 응답과 동일한 구조의 테스트 데이터
+      const testResponse = {
+        accessToken: 'test-access-token-' + Date.now(),
+        user: {
+          id: 'test-user-' + Date.now(),
+          email: 'test@example.com',
+          name: '테스트 사용자',
+          nickname: '테스터',
+          picture: undefined,
+          createdAt: new Date().toISOString(),
+        } as User,
+      };
+
+      // AuthContext를 통해 로그인 (실제 로그인과 동일한 방식)
+      login(testResponse.accessToken, testResponse.user);
+
+      setIsLoading(false);
+      alert('테스트 로그인 완료!');
+      onClose();
+    } catch {
+      setIsLoading(false);
+      alert('테스트 로그인에 실패했습니다.');
+    }
+  };
+
   const handleLogout = () => {
-    // 로컬스토리지에서 토큰 제거
-    localStorage.removeItem('accessToken');
-    setIsLoggedIn(false);
+    logout();
     onClose();
   };
 
@@ -79,7 +111,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         {/* 콘텐츠 */}
         <div className="flex-1 overflow-y-auto max-h-[calc(80vh-80px)]">
           {!isLoggedIn ? (
-            // 로그아웃 상태 - 로고와 구글 로그인만
+            // 로그아웃 상태 - 로고와 로그인 버튼들
             <div className="flex flex-col items-center justify-center h-full px-6 space-y-8">
               {/* 로고 */}
               <div className="text-center space-y-4 m-5">
@@ -125,6 +157,50 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   {isLoading ? '로그인 중...' : 'Google로 로그인'}
                 </span>
               </button>
+
+              {/* 구분선 */}
+              <div className="w-full max-w-sm flex items-center">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <span className="px-4 text-gray-500 text-sm">또는</span>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
+              {/* 테스트용 로그인 버튼 */}
+              <button
+                onClick={handleTestLogin}
+                disabled={isLoading}
+                className={`w-full max-w-sm bg-green-500 text-white rounded-lg py-4 px-6 flex items-center justify-center space-x-3 transition-colors shadow-sm hover:bg-green-600 ${
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title="개발용 테스트 로그인"
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                ) : (
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                )}
+                <span className="font-medium">
+                  {isLoading ? '테스트 로그인 중...' : '테스트 로그인'}
+                </span>
+              </button>
+
+              {/* 테스트 로그인 안내 */}
+              <div className="text-center text-xs text-gray-500 max-w-sm">
+                <p>💡 개발 중 빠른 테스트를 위한 버튼입니다.</p>
+                <p>실제 API 응답을 시뮬레이션하여 로그인 상태를 만듭니다.</p>
+              </div>
             </div>
           ) : (
             // 로그인 상태 - 사용자 정보
@@ -132,11 +208,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               {/* 사용자 프로필 */}
               <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
-                  <img src={loginIcon} alt="사용자" className="w-10 h-10" />
+                  {user?.picture ? (
+                    <img
+                      src={user.picture}
+                      alt="사용자"
+                      className="w-20 h-20 rounded-full"
+                    />
+                  ) : (
+                    <img src={loginIcon} alt="사용자" className="w-10 h-10" />
+                  )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">김철수님</h2>
-                  <p className="text-gray-600">kim@example.com</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {user?.nickname || user?.name || '사용자'}
+                  </h2>
+                  <p className="text-gray-600">
+                    {user?.email || '이메일 없음'}
+                  </p>
+                  {user?.nickname && (
+                    <p className="text-sm text-gray-500">({user.name})</p>
+                  )}
                 </div>
               </div>
 
@@ -180,7 +271,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
                 <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-700">설정</span>
+                    <span className="text-gray-800">설정</span>
                     <svg
                       className="w-5 h-5 text-gray-400"
                       fill="none"

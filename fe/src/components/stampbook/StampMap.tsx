@@ -122,7 +122,7 @@ const StampMap: React.FC<StampMapProps> = ({
             const iconSrc = place.isVisited ? fillMarkIcon : emptyMarkIcon;
             const markerImage = new kakao.maps.MarkerImage(
               iconSrc,
-              new kakao.maps.Size(32, 32)
+              new kakao.maps.Size(16, 16)
             );
 
             const marker = new kakao.maps.Marker({

@@ -4,12 +4,7 @@ import makeNewIcon from '../../assets/icons/make_new.svg';
 import StampBook from './StampBook';
 import StampMap from './StampMap';
 import StampModifyModal from './StampModifyModal';
-import { colorPalette } from './colorPalette';
-
-interface StampModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import { useStamp } from '../../store/StampContext';
 
 interface Place {
   id: string;
@@ -26,6 +21,11 @@ interface Stamp {
   locations: Place[];
 }
 
+interface StampModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const [isLinkMode, setIsLinkMode] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -37,93 +37,22 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const [selectedStampForModify, setSelectedStampForModify] =
     useState<Stamp | null>(null);
 
-  // Mock 스탬프 데이터를 상태로 관리
-  const [stamps, setStamps] = useState<Stamp[]>([
-    {
-      id: '1',
-      name: '카페 스탬프',
-      color: colorPalette[0], // 첫 번째 색상 사용
-      locations: [
-        {
-          id: '1',
-          name: '스타벅스 강남점',
-          lat: 37.5665,
-          lng: 126.978,
-          isVisited: true,
-        },
-        {
-          id: '2',
-          name: '투썸플레이스 홍대점',
-          lat: 37.5575,
-          lng: 126.925,
-          isVisited: false,
-        },
-        {
-          id: '3',
-          name: '할리스 커피 신촌점',
-          lat: 37.5595,
-          lng: 126.943,
-          isVisited: false,
-        },
-      ],
-    },
-    {
-      id: '2',
-      name: '맛집 스탬프',
-      color: colorPalette[1], // 두 번째 색상 사용
-      locations: [
-        {
-          id: '6',
-          name: '맛있는 치킨집',
-          lat: 37.5725,
-          lng: 126.985,
-          isVisited: true,
-        },
-        {
-          id: '7',
-          name: '피자나라',
-          lat: 37.5535,
-          lng: 126.935,
-          isVisited: false,
-        },
-        {
-          id: '8',
-          name: '스시로',
-          lat: 37.5685,
-          lng: 126.988,
-          isVisited: true,
-        },
-      ],
-    },
-    {
-      id: '3',
-      name: '일식집 스탬프',
-      color: colorPalette[2], // 세 번째 색상 사용
-      locations: [
-        {
-          id: '9',
-          name: '스시로',
-          lat: 37.5515,
-          lng: 126.988,
-          isVisited: true,
-        },
-        {
-          id: '10',
-          name: '우동집',
-          lat: 37.5475,
-          lng: 126.915,
-          isVisited: false,
-        },
-        {
-          id: '11',
-          name: '라멘집',
-          lat: 37.5795,
-          lng: 126.991,
-          isVisited: true,
-        },
-      ],
-    },
-  ]);
+  // StampContext에서 데이터 가져오기
+  const { stampData, createStampBoard, updateStampBoard, deleteStampBoard } = useStamp();
+
+  // StampContext 데이터를 기존 Stamp 형식으로 변환
+  const stamps: Stamp[] = stampData.stampBoards.map(board => ({
+    id: board.id,
+    name: board.title,
+    color: board.color,
+    locations: (board.bookmarks || []).map(bookmark => ({
+      id: bookmark.id,
+      name: bookmark.placeName,
+      lat: bookmark.latitude,
+      lng: bookmark.longitude,
+      isVisited: bookmark.visited
+    }))
+  }));
 
   const handleStampClick = (stamp: Stamp) => {
     setSelectedStampBook(stamp);
@@ -186,13 +115,10 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const handleSaveModify = (stampName: string, stampColor: string) => {
     if (selectedStampForModify) {
       // 스탬프 데이터 업데이트
-      setStamps((prevStamps) =>
-        prevStamps.map((stamp) =>
-          stamp.id === selectedStampForModify.id
-            ? { ...stamp, name: stampName, color: stampColor }
-            : stamp
-        )
-      );
+      updateStampBoard(selectedStampForModify.id, {
+        title: stampName,
+        color: stampColor
+      });
 
       // 선택된 스탬프도 업데이트
       setSelectedStampForModify((prev) =>
@@ -314,15 +240,15 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
             </>
           )}
         </div>
-      </div>
 
-      {/* 수정 모달 */}
-      <StampModifyModal
-        isOpen={showModifyModal}
-        stamp={selectedStampForModify}
-        onClose={handleCloseModifyModal}
-        onSave={handleSaveModify}
-      />
+        {/* 수정 모달 */}
+        <StampModifyModal
+          isOpen={showModifyModal}
+          stamp={selectedStampForModify}
+          onClose={handleCloseModifyModal}
+          onSave={handleSaveModify}
+        />
+      </div>
     </>
   );
 };

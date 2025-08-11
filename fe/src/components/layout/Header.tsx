@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import loginIcon from '../../assets/icons/login.svg';
 import stampIcon from '../../assets/icons/stamp.svg';
+import { useAuth } from '../../store/AuthContext';
 import LoginModal from '../auth/LoginModal';
 import StampModal from '../stampbook/StampModal';
 
 const Header = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isStampModalOpen, setIsStampModalOpen] = useState(false);
+  const { isLoggedIn, user } = useAuth();
 
   const handleLoginClick = () => {
     setIsLoginModalOpen(true);
@@ -69,6 +71,22 @@ const Header = () => {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"></div>
           </div>
         </div>
+
+        {/* 로그인 상태 및 사용자 정보 표시 */}
+        {isLoggedIn && user && (
+          <div className="mt-2 space-y-1">
+            <div className="text-center">
+              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md">
+                🟢 {user.nickname || user.name}님 로그인됨
+              </span>
+            </div>
+            <div className="text-center">
+              <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                {user.email}
+              </span>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* 로그인 모달 */}

@@ -3,10 +3,10 @@ import Header from '../../components/layout/Header';
 import Navigation from '../../components/layout/Navigation';
 import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
 import fillMarkIcon from '../../assets/icons/fill_mark.svg';
-import { colorPalette } from '../../components/stampbook/colorPalette';
+import { useStamp } from '../../store/StampContext';
 import PlaceDetailModal from '../../components/map/PlaceDetailModal';
 
-interface Place {
+interface PlaceDetail {
   id: string;
   name: string;
   lat: number;
@@ -17,177 +17,52 @@ interface Place {
   sourceContent?: string;
 }
 
-interface Stamp {
-  id: string;
-  name: string;
-  color: string;
-  locations: Place[];
-}
-
 const MapPage = () => {
   const apiKey = import.meta.env.VITE_KAKAO_MAP_API_KEY;
   const mapRef = useRef<HTMLDivElement>(null);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceDetail | null>(null);
   const [showPlaceDetail, setShowPlaceDetail] = useState(false);
 
-  // 모든 스탬프 데이터 (StampModal에서 가져온 데이터)
-  const stamps: Stamp[] = [
-    {
-      id: '1',
-      name: '카페 스탬프',
-      color: colorPalette[0], // 첫 번째 색상 사용
-      locations: [
-        {
-          id: '1',
-          name: '스타벅스 강남점',
-          lat: 37.5665,
-          lng: 126.978,
-          isVisited: true,
-          address: '서울 강남구 강남대로 396',
-          sourceTitle: '카페 리뷰',
-          sourceContent: '강남역 근처 스타벅스입니다.',
-        },
-        {
-          id: '2',
-          name: '투썸플레이스 홍대점',
-          lat: 37.5575,
-          lng: 126.925,
-          isVisited: false,
-          address: '서울 마포구 홍대로 123',
-          sourceTitle: '카페 추천',
-          sourceContent: '홍대입구역 근처 투썸플레이스입니다.',
-        },
-        {
-          id: '3',
-          name: '할리스 커피 신촌점',
-          lat: 37.5595,
-          lng: 126.943,
-          isVisited: false,
-          address: '서울 서대문구 신촌로 123',
-          sourceTitle: '카페 정보',
-          sourceContent: '신촌역 근처 할리스 커피입니다.',
-        },
-      ],
-    },
-    {
-      id: '2',
-      name: '맛집 스탬프',
-      color: colorPalette[1], // 두 번째 색상 사용
-      locations: [
-        {
-          id: '6',
-          name: '맛있는 치킨집',
-          lat: 37.5725,
-          lng: 126.985,
-          isVisited: true,
-          address: '서울 강남구 테헤란로 456',
-          sourceTitle: '맛집 리뷰',
-          sourceContent: '강남역 근처 맛있는 치킨집입니다.',
-        },
-        {
-          id: '7',
-          name: '피자나라',
-          lat: 37.5535,
-          lng: 126.935,
-          isVisited: false,
-          address: '서울 마포구 와우산로 789',
-          sourceTitle: '피자 맛집',
-          sourceContent: '홍대입구역 근처 피자나라입니다.',
-        },
-        {
-          id: '8',
-          name: '스시로',
-          lat: 37.5685,
-          lng: 126.988,
-          isVisited: true,
-          address: '서울 강남구 강남대로 321',
-          sourceTitle: '스시 맛집',
-          sourceContent: '강남역 근처 스시로입니다.',
-        },
-      ],
-    },
-    {
-      id: '3',
-      name: '일식집 스탬프',
-      color: colorPalette[2], // 세 번째 색상 사용
-      locations: [
-        {
-          id: '9',
-          name: '스시로',
-          lat: 37.5515,
-          lng: 126.988,
-          isVisited: true,
-          address: '서울 강남구 논현로 654',
-          sourceTitle: '스시 맛집',
-          sourceContent: '논현역 근처 스시로입니다.',
-        },
-        {
-          id: '10',
-          name: '우동집',
-          lat: 37.5475,
-          lng: 126.915,
-          isVisited: false,
-          address: '서울 마포구 동교로 987',
-          sourceTitle: '우동 맛집',
-          sourceContent: '홍대입구역 근처 우동집입니다.',
-        },
-        {
-          id: '11',
-          name: '라멘집',
-          lat: 37.5795,
-          lng: 126.991,
-          isVisited: true,
-          address: '서울 강남구 삼성로 147',
-          sourceTitle: '라멘 맛집',
-          sourceContent: '삼성역 근처 라멘집입니다.',
-        },
-      ],
-    },
-  ];
+  // StampContext에서 데이터 가져오기
+  const { stampData, isLoading: stampLoading, error: stampError } = useStamp();
 
-  // 모든 장소를 하나의 배열로 합치기
-  const allPlaces = stamps.flatMap((stamp) =>
-    stamp.locations.map((place) => ({
-      ...place,
-      stampName: stamp.name,
-      stampColor: stamp.color,
-    }))
-  );
+  // 모든 장소를 하나의 배열로 변환
+  const allPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => ({
+    id: bookmark.id,
+    name: bookmark.placeName,
+    lat: bookmark.latitude,
+    lng: bookmark.longitude,
+    isVisited: bookmark.visited,
+    address: bookmark.address,
+    sourceTitle: bookmark.post?.title,
+    sourceContent: bookmark.post?.title
+      ? `${bookmark.post.title}에서 가져온 장소입니다.`
+      : undefined,
+  }));
 
-  // 카카오맵 SDK 로드 함수 (KakaoMapTest 방식 적용)
+  const handlePlaceClick = (place: PlaceDetail) => {
+    setSelectedPlace(place);
+    setShowPlaceDetail(true);
+  };
+
+  const handleClosePlaceDetail = () => {
+    setShowPlaceDetail(false);
+    setSelectedPlace(null);
+  };
+
   const loadKakaoMapSDK = () => {
     return new Promise<void>((resolve, reject) => {
-      // 이미 로드된 경우 즉시 반환
-      if ((window as any).kakao) {
-        setSdkLoaded(true);
+      if ((window as any).kakao && (window as any).kakao.maps) {
         resolve();
-        return;
-      }
-
-      // 중복 로딩 방지
-      if (document.querySelector('script[src*="dapi.kakao.com"]')) {
-        // 이미 로딩 중인 경우 대기
-        const checkLoaded = setInterval(() => {
-          if ((window as any).kakao) {
-            clearInterval(checkLoaded);
-            setSdkLoaded(true);
-            resolve();
-          }
-        }, 100);
         return;
       }
 
       const script = document.createElement('script');
       script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
-      script.onload = () => {
-        setSdkLoaded(true);
-        resolve();
-      };
-      script.onerror = () => {
-        reject(new Error('카카오맵 SDK 로드 실패'));
-      };
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('카카오맵 SDK 로드 실패'));
       document.head.appendChild(script);
     });
   };
@@ -263,15 +138,16 @@ const MapPage = () => {
 
             // 마커 클릭 이벤트
             kakao.maps.event.addListener(kakaoMarker, 'click', function () {
-              console.log(`${place.name} 마커 클릭됨`);
-              setSelectedPlace(place);
-              setShowPlaceDetail(true);
+              handlePlaceClick(place);
             });
           });
+
+          console.log('마커 추가 완료');
+          setSdkLoaded(true);
         });
-      } catch (error) {
-        console.error('지도 초기화 에러:', error);
-        setError('지도를 불러오는데 실패했습니다.');
+      } catch (err) {
+        setError('지도를 초기화하는데 실패했습니다.');
+        console.error('지도 초기화 오류:', err);
       }
     };
 
@@ -279,82 +155,159 @@ const MapPage = () => {
   }, [apiKey, allPlaces]);
 
   const handleKakaoMap = () => {
-    if (selectedPlace) {
-      const url = `https://map.kakao.com/link/map/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`;
-      window.open(url, '_blank');
-    }
+    // 카카오맵 앱으로 열기
+    const url = `kakaomap://look?p=${37.5665},${126.978}`;
+    window.open(url);
   };
 
   const handleNaverMap = () => {
-    if (selectedPlace) {
-      const url = `https://map.naver.com/p/search/${selectedPlace.name}`;
-      window.open(url, '_blank');
-    }
+    // 네이버맵 앱으로 열기
+    const url = `nmap://place?lat=${37.5665}&lng=${126.978}&name=서울시청`;
+    window.open(url);
   };
 
-  if (!apiKey) {
+  if (error) {
     return (
-      <div className="h-screen flex flex-col">
-        <Header />
-        <main className="main-content bg-gray-50">
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-red-600 mb-2">
-                카카오맵 API 키가 설정되지 않았습니다.
-              </p>
-              <p className="text-sm text-gray-600">.env 파일을 확인해주세요.</p>
-            </div>
-          </div>
-        </main>
-        <Navigation />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            지도 로드 실패
+          </h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (stampLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">스탬프 데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (stampError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            데이터 로드 실패
+          </h1>
+          <p className="text-gray-600 mb-4">{stampError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* 헤더 */}
+    <div className="min-h-screen bg-gray-50">
       <Header />
-
-      {/* 메인 콘텐츠 영역 */}
-      <main className="main-content bg-gray-50">
-        {/* 지도 영역 */}
-        <div className="w-full h-full relative">
-          {/* 카카오맵 */}
-          <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-
-          {/* 로딩 상태 표시 */}
-          {!sdkLoaded && !error && (
-            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-600">지도 로딩 중...</p>
-              </div>
-            </div>
-          )}
-
-          {/* 에러 상태 표시 */}
-          {error && (
-            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* 하단 네비게이션 */}
       <Navigation />
 
-      {/* 장소 상세 정보 모달 */}
-      {selectedPlace && (
+      {/* 지도 컨테이너 */}
+      <div className="pt-[100px] px-4 pb-20">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div
+            ref={mapRef}
+            className="w-full h-[500px] relative"
+            style={{ minHeight: '500px' }}
+          >
+            {!sdkLoaded && (
+              <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">지도를 불러오는 중...</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 지도 앱 연동 버튼들 */}
+        <div className="mt-4 space-y-2">
+          <button
+            onClick={handleKakaoMap}
+            className="w-full py-3 bg-yellow-400 text-black rounded-lg font-medium hover:bg-yellow-500 transition-colors"
+          >
+            카카오맵 앱에서 보기
+          </button>
+          <button
+            onClick={handleNaverMap}
+            className="w-full py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+          >
+            네이버맵 앱에서 보기
+          </button>
+        </div>
+
+        {/* 장소 정보 */}
+        {allPlaces.length > 0 && (
+          <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              등록된 장소 ({allPlaces.length}개)
+            </h3>
+            <div className="space-y-2">
+              {allPlaces.map((place) => (
+                <div
+                  key={place.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handlePlaceClick(place)}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        place.isVisited
+                          ? 'bg-green-500'
+                          : 'border-2 border-gray-400'
+                      }`}
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900">{place.name}</p>
+                      {place.address && (
+                        <p className="text-sm text-gray-600">{place.address}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                      {place.isVisited ? '방문 완료' : '미방문'}
+                    </p>
+                    {place.sourceTitle && (
+                      <p className="text-xs text-blue-600">
+                        {place.sourceTitle}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 장소 상세 모달 */}
+      {showPlaceDetail && selectedPlace && (
         <PlaceDetailModal
           place={selectedPlace}
           isOpen={showPlaceDetail}
-          onClose={() => setShowPlaceDetail(false)}
-          onKakaoMap={handleKakaoMap}
-          onNaverMap={handleNaverMap}
+          onClose={handleClosePlaceDetail}
         />
       )}
     </div>
