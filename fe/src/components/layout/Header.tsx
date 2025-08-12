@@ -43,6 +43,15 @@ const Header = () => {
 
           {/* 우측 아이콘들 */}
           <div className="flex items-center space-x-3">
+            {/* 로그인 상태 표시 */}
+            {isLoggedIn && user && (
+              <div className="flex flex-col items-center space-y-1">
+                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md">
+                  {user.nickname || user.name}님
+                </span>
+              </div>
+            )}
+
             {/* 로그인 아이콘 */}
             <button
               onClick={handleLoginClick}
@@ -71,22 +80,6 @@ const Header = () => {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"></div>
           </div>
         </div>
-
-        {/* 로그인 상태 및 사용자 정보 표시 */}
-        {isLoggedIn && user && (
-          <div className="mt-2 space-y-1">
-            <div className="text-center">
-              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md">
-                🟢 {user.nickname || user.name}님 로그인됨
-              </span>
-            </div>
-            <div className="text-center">
-              <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
-                {user.email}
-              </span>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* 로그인 모달 */}

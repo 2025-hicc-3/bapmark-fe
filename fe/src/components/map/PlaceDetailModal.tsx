@@ -1,5 +1,6 @@
 import React from 'react';
-import saveIcon from '../../assets/icons/save.svg';
+import saveFillIcon from '../../assets/icons/save_fill.svg';
+import fillMarkIcon from '../../assets/icons/fill_mark.svg';
 import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
 import modifyIcon from '../../assets/icons/modify.svg';
 
@@ -54,13 +55,17 @@ const PlaceDetailModal: React.FC<PlaceDetailModalProps> = ({
             )}
           </div>
           <div className="flex flex-col items-center space-y-1">
-            {/* save 아이콘 */}
+            {/* save_fill 아이콘 - 맵에 마커가 있다는 것은 북마크된 상태 */}
             <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-              <img src={saveIcon} alt="저장" className="w-4 h-4" />
+              <img src={saveFillIcon} alt="북마크됨" className="w-4 h-4" />
             </button>
-            {/* empty_mark 아이콘 */}
+            {/* fill_mark/empty_mark 아이콘 - 방문 완료 여부에 따라 표시 */}
             <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-              <img src={emptyMarkIcon} alt="빈 마크" className="w-4 h-4" />
+              <img
+                src={place.isVisited ? fillMarkIcon : emptyMarkIcon}
+                alt={place.isVisited ? '방문 완료' : '미방문'}
+                className="w-4 h-4"
+              />
             </button>
             {/* modify 아이콘 */}
             <button className="p-1 hover:bg-gray-100 rounded transition-colors">

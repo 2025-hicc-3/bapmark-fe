@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import shareIcon from '../../assets/icons/share.svg';
 import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
 import fillMarkIcon from '../../assets/icons/fill_mark.svg';
+import PlaceDetailModal from '../map/PlaceDetailModal';
 
 interface Place {
   id: string;
@@ -9,6 +10,9 @@ interface Place {
   lat: number;
   lng: number;
   isVisited: boolean;
+  address?: string;
+  sourceTitle?: string;
+  sourceContent?: string;
 }
 
 interface StampBook {
@@ -33,6 +37,8 @@ const StampMap: React.FC<StampMapProps> = ({
 }) => {
   const [showStampBookDropdown, setShowStampBookDropdown] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [isPlaceDetailModalOpen, setIsPlaceDetailModalOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -162,6 +168,8 @@ const StampMap: React.FC<StampMapProps> = ({
             // 마커 클릭 이벤트
             kakao.maps.event.addListener(marker, 'click', function () {
               console.log(`${place.name} 마커 클릭됨`);
+              setSelectedPlace(place);
+              setIsPlaceDetailModalOpen(true);
             });
           });
 
@@ -197,6 +205,25 @@ const StampMap: React.FC<StampMapProps> = ({
       console.log('공유 링크가 복사되었습니다:', shareUrl);
     } catch (error) {
       console.error('링크 복사 실패:', error);
+    }
+  };
+
+  const handleClosePlaceDetailModal = () => {
+    setIsPlaceDetailModalOpen(false);
+    setSelectedPlace(null);
+  };
+
+  const handleKakaoMap = () => {
+    if (selectedPlace) {
+      const url = `https://map.kakao.com/link/map/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleNaverMap = () => {
+    if (selectedPlace) {
+      const url = `https://map.naver.com/p/search/${selectedPlace.name}`;
+      window.open(url, '_blank');
     }
   };
 
@@ -340,6 +367,15 @@ const StampMap: React.FC<StampMapProps> = ({
           <span className="font-medium">공유하기</span>
         </div>
       </div>
+
+      {/* 장소 상세정보 모달 */}
+      <PlaceDetailModal
+        isOpen={isPlaceDetailModalOpen}
+        place={selectedPlace}
+        onClose={handleClosePlaceDetailModal}
+        onKakaoMap={handleKakaoMap}
+        onNaverMap={handleNaverMap}
+      />
     </div>
   );
 };

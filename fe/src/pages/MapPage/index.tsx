@@ -223,7 +223,7 @@ const MapPage = () => {
       <Navigation />
 
       {/* 지도 컨테이너 */}
-      <div className="pt-[100px] px-4 pb-20">
+      <div className="pt-[100px] pb-20">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div
             ref={mapRef}
@@ -242,7 +242,7 @@ const MapPage = () => {
         </div>
 
         {/* 지도 앱 연동 버튼들 */}
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 px-4 space-y-2">
           <button
             onClick={handleKakaoMap}
             className="w-full py-3 bg-yellow-400 text-black rounded-lg font-medium hover:bg-yellow-500 transition-colors"
@@ -259,7 +259,7 @@ const MapPage = () => {
 
         {/* 장소 정보 */}
         {allPlaces.length > 0 && (
-          <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
+          <div className="mt-6 mx-4 bg-white rounded-lg shadow-sm p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               등록된 장소 ({allPlaces.length}개)
             </h3>
