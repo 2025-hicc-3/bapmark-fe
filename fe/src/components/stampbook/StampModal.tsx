@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import modifyIcon from '../../assets/icons/modify.svg';
 import makeNewIcon from '../../assets/icons/make_new.svg';
+import colorIcon from '../../assets/icons/color.svg';
 import StampBook from './StampBook';
 import StampMap from './StampMap';
 import StampModifyModal from './StampModifyModal';
 import { useStamp } from '../../store/StampContext';
+import { colorPalette } from './colorPalette';
 
 interface Place {
   id: string;
@@ -37,21 +38,27 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const [selectedStampForModify, setSelectedStampForModify] =
     useState<Stamp | null>(null);
 
+  // 새로운 상태들
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedColorForCreate, setSelectedColorForCreate] =
+    useState<string>('');
+
   // StampContext에서 데이터 가져오기
-  const { stampData, createStampBoard, updateStampBoard, deleteStampBoard } = useStamp();
+  const { stampData, createStampBoard, updateStampBoard, deleteStampBoard } =
+    useStamp();
 
   // StampContext 데이터를 기존 Stamp 형식으로 변환
-  const stamps: Stamp[] = stampData.stampBoards.map(board => ({
+  const stamps: Stamp[] = stampData.stampBoards.map((board) => ({
     id: board.id,
     name: board.title,
     color: board.color,
-    locations: (board.bookmarks || []).map(bookmark => ({
+    locations: (board.bookmarks || []).map((bookmark) => ({
       id: bookmark.id,
       name: bookmark.placeName,
       lat: bookmark.latitude,
       lng: bookmark.longitude,
-      isVisited: bookmark.visited
-    }))
+      isVisited: bookmark.visited,
+    })),
   }));
 
   const handleStampClick = (stamp: Stamp) => {
@@ -64,13 +71,61 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
     setShowModifyModal(true);
   };
 
-  const handleModify = () => {
-    setShowModifyModal(true);
+  // make_new 아이콘 클릭 시 새 스탬프북 만들기 모달 표시
+  const handleMakeNew = () => {
+    setShowCreateModal(true);
+    setSelectedColorForCreate(''); // 색상 선택 초기화
   };
 
-  const handleMakeNew = () => {
-    // TODO: 새 스탬프 만들기 기능
-    console.log('새 스탬프 만들기');
+  // 새 스탬프북 생성
+  const handleCreateStampBoard = async (title: string, color: string) => {
+    try {
+      const success = await createStampBoard(title, color);
+      if (success) {
+        setShowCreateModal(false);
+        setSelectedColorForCreate(''); // 색상 선택 초기화
+        console.log('스탬프북이 성공적으로 생성되었습니다.');
+      } else {
+        console.error('스탬프북 생성에 실패했습니다.');
+        // 에러 메시지는 StampContext에서 이미 설정됨
+      }
+    } catch (error) {
+      console.error('스탬프북 생성 중 오류 발생:', error);
+    }
+  };
+
+  // 색상 선택 처리
+  const handleColorSelect = (color: string) => {
+    setSelectedColorForCreate(color);
+  };
+
+  // 생성 버튼 클릭 처리
+  const handleCreateClick = () => {
+    const titleInput = document.getElementById(
+      'stampTitle'
+    ) as HTMLInputElement;
+    if (titleInput && titleInput.value.trim() && selectedColorForCreate) {
+      handleCreateStampBoard(titleInput.value.trim(), selectedColorForCreate);
+    } else {
+      alert('스탬프북 이름과 색상을 모두 선택해주세요.');
+    }
+  };
+
+  // 스탬프북 삭제
+  const handleDeleteStampBoard = async (stampId: string) => {
+    try {
+      const success = await deleteStampBoard(stampId);
+      if (success) {
+        setShowModifyModal(false);
+        setSelectedStampForModify(null);
+        console.log('스탬프북이 성공적으로 삭제되었습니다.');
+      } else {
+        console.error('스탬프북 삭제에 실패했습니다.');
+        // 에러 메시지는 StampContext에서 이미 설정됨
+      }
+    } catch (error) {
+      console.error('스탬프북 삭제 중 오류 발생:', error);
+    }
   };
 
   const handleLinkPaste = () => {
@@ -112,20 +167,29 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
     setSelectedStampForModify(null);
   };
 
-  const handleSaveModify = (stampName: string, stampColor: string) => {
+  const handleSaveModify = async (stampName: string, stampColor: string) => {
     if (selectedStampForModify) {
-      // 스탬프 데이터 업데이트
-      updateStampBoard(selectedStampForModify.id, {
-        title: stampName,
-        color: stampColor
-      });
+      try {
+        const success = await updateStampBoard(selectedStampForModify.id, {
+          title: stampName,
+          color: stampColor,
+        });
 
-      // 선택된 스탬프도 업데이트
-      setSelectedStampForModify((prev) =>
-        prev ? { ...prev, name: stampName, color: stampColor } : null
-      );
+        if (success) {
+          // 선택된 스탬프도 업데이트
+          setSelectedStampForModify((prev) =>
+            prev ? { ...prev, name: stampName, color: stampColor } : null
+          );
+          setShowModifyModal(false);
+          console.log('스탬프북이 성공적으로 수정되었습니다.');
+        } else {
+          console.error('스탬프북 수정에 실패했습니다.');
+          // 에러 메시지는 StampContext에서 이미 설정됨
+        }
+      } catch (error) {
+        console.error('스탬프북 수정 중 오류 발생:', error);
+      }
     }
-    setShowModifyModal(false);
   };
 
   if (!isOpen) return null;
@@ -174,9 +238,6 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
               <div className="flex justify-end p-4">
                 <div className="flex flex-col items-end space-y-0">
                   <div className="flex space-x-2">
-                    <button onClick={handleModify} className="p-2">
-                      <img src={modifyIcon} alt="수정" />
-                    </button>
                     <button onClick={handleMakeNew}>
                       <img src={makeNewIcon} alt="새로 만들기" />
                     </button>
@@ -215,7 +276,7 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
                         value={linkUrl}
                         onChange={(e) => setLinkUrl(e.target.value)}
                         placeholder="링크를 붙여넣어주세요..."
-                        className="w-full h-12 px-4 py-3 border border-gray-300 rounded-2xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
+                        className="w-full h-12 px-4 py-2 border border-gray-300 rounded-2xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
                       />
                     </div>
                   </div>
@@ -247,7 +308,76 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
           stamp={selectedStampForModify}
           onClose={handleCloseModifyModal}
           onSave={handleSaveModify}
+          onDelete={handleDeleteStampBoard}
         />
+
+        {/* 새 스탬프북 만들기 모달 */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+            <div className="bg-white rounded-3xl w-[90%] max-w-[387px] p-6">
+              <h3 className="text-lg font-semibold text-center mb-4">
+                새 스탬프북 만들기
+              </h3>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    스탬프북 이름
+                  </label>
+                  <input
+                    type="text"
+                    id="stampTitle"
+                    placeholder="스탬프북 이름을 입력하세요"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    색상 선택
+                  </label>
+                  <div className="grid grid-cols-5 gap-3">
+                    {colorPalette.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-12 h-12 rounded-full border-2 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          selectedColorForCreate === color
+                            ? 'border-blue-500 ring-2 ring-blue-300'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => handleColorSelect(color)}
+                        title={color}
+                      >
+                        {selectedColorForCreate === color && (
+                          <img
+                            src={colorIcon}
+                            alt="선택됨"
+                            className="w-6 h-6 mx-auto"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <button
+                  onClick={handleCreateClick}
+                  disabled={!selectedColorForCreate}
+                  className="w-full py-3 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  생성
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="w-full py-3 px-4 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

@@ -22,6 +22,7 @@ interface StampModifyModalProps {
   stamp: Stamp | null;
   onClose: () => void;
   onSave: (stampName: string, stampColor: string) => void;
+  onDelete: (stampId: string) => void;
 }
 
 const StampModifyModal: React.FC<StampModifyModalProps> = ({
@@ -29,10 +30,12 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
   stamp,
   onClose,
   onSave,
+  onDelete,
 }) => {
   const [stampName, setStampName] = useState('');
   const [showColorModal, setShowColorModal] = useState(false);
   const [selectedColor, setSelectedColor] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // 모달이 열릴 때 스탬프명 초기화
   React.useEffect(() => {
@@ -45,6 +48,20 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
   const handleSave = () => {
     onSave(stampName, selectedColor);
     onClose();
+  };
+
+  const handleDelete = () => {
+    if (stamp) {
+      onDelete(stamp.id);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -149,13 +166,22 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
             </div>
           </div>
 
-          {/* 저장 버튼 - 하단 고정 */}
-          <div className="p-4 flex-shrink-0 flex justify-center">
+          {/* 버튼 영역 - 하단 고정 */}
+          <div className="p-4 flex-shrink-0 flex flex-col space-y-3">
+            {/* 저장 버튼 */}
             <button
               onClick={handleSave}
-              className="w-32 bg-[#434343] text-white px-8 py-3 rounded-2xl font-semibold hover:bg-gray-700 transition-colors"
+              className="w-full bg-[#434343] text-white px-8 py-3 rounded-2xl font-semibold hover:bg-gray-700 transition-colors"
             >
               저장하기
+            </button>
+            
+            {/* 삭제 버튼 */}
+            <button
+              onClick={handleDeleteClick}
+              className="w-full bg-red-500 text-white px-8 py-3 rounded-2xl font-semibold hover:bg-red-600 transition-colors"
+            >
+              삭제하기
             </button>
           </div>
         </div>
@@ -170,6 +196,44 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
         onClose={() => setShowColorModal(false)}
         onColorSelect={handleColorSelect}
       />
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+          <div className="bg-white rounded-3xl w-[90%] max-w-[387px] p-6">
+            <h3 className="text-lg font-semibold text-center mb-4">
+              스탬프북 삭제
+            </h3>
+            <p className="text-center text-gray-600 mb-6">
+              <span
+                className="font-medium"
+                style={{ color: stamp.color }}
+              >
+                {stamp.name}
+              </span>
+              스탬프북을 삭제하시겠습니까?
+              <br />
+              <span className="text-sm text-red-500">
+                이 작업은 되돌릴 수 없습니다.
+              </span>
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
