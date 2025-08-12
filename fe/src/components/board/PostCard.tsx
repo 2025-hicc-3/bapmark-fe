@@ -1,23 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { Post } from '../../types/api';
 
 interface PostCardProps {
-  id: string;
-  title: string;
-  content: string;
-  location: string;
+  post: Post;
 }
 
-const PostCard: React.FC<PostCardProps> = ({
-  id,
-  title,
-  content,
-  location,
-}) => {
+const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/board/${id}`);
+    navigate(`/board/${post.id}`);
   };
 
   return (
@@ -27,15 +20,19 @@ const PostCard: React.FC<PostCardProps> = ({
     >
       <div className="flex flex-col space-y-2">
         {/* 제목 */}
-        <h3 className="text-black font-semibold text-sm leading-7">{title}</h3>
+        <h3 className="text-black font-semibold text-sm leading-7">
+          {post.title}
+        </h3>
 
         {/* 내용 */}
-        <p className="text-black font-medium text-xs leading-7">{content}</p>
+        <p className="text-black font-medium text-xs leading-7">
+          {post.content}
+        </p>
 
-        {/* 위치 정보 */}
+        {/* 주소 정보 */}
         <div className="flex justify-end">
           <span className="text-gray-600 font-bold text-xs leading-5 text-center">
-            {location}
+            {post.address}
           </span>
         </div>
       </div>

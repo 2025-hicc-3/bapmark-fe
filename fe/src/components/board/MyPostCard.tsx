@@ -1,19 +1,12 @@
 import React, { useState, useRef } from 'react';
 import PostCard from './PostCard';
+import type { Post } from '../../types/api';
 
 interface MyPostCardProps {
-  id: number;
-  title: string;
-  content: string;
-  location: string;
+  post: Post;
 }
 
-const MyPostCard: React.FC<MyPostCardProps> = ({
-  id,
-  title,
-  content,
-  location
-}) => {
+const MyPostCard: React.FC<MyPostCardProps> = ({ post }) => {
   const [isSwiped, setIsSwiped] = useState(false);
   const [startX, setStartX] = useState(0);
   const [currentX, setCurrentX] = useState(0);
@@ -26,7 +19,7 @@ const MyPostCard: React.FC<MyPostCardProps> = ({
   const handleTouchMove = (e: React.TouchEvent) => {
     const deltaX = e.touches[0].clientX - startX;
     setCurrentX(deltaX);
-    
+
     // 좌측으로 스와이프할 때만 동작
     if (deltaX < 0) {
       setIsSwiped(true);
@@ -44,12 +37,12 @@ const MyPostCard: React.FC<MyPostCardProps> = ({
   };
 
   const handleEdit = () => {
-    console.log('수정:', id);
+    console.log('수정:', post.id);
     setIsSwiped(false);
   };
 
   const handleDelete = () => {
-    console.log('삭제:', id);
+    console.log('삭제:', post.id);
     setIsSwiped(false);
   };
 
@@ -65,17 +58,17 @@ const MyPostCard: React.FC<MyPostCardProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <PostCard
-          title={title}
-          content={content}
-          location={location}
-        />
+        <PostCard post={post} />
       </div>
 
       {/* 스와이프 액션 버튼들 */}
-      <div className={`absolute right-0 top-0 h-full flex items-center transition-transform duration-300 ${
-        isSwiped ? 'transform -translate-x-[0px]' : 'transform translate-x-[120px]'
-      }`}>
+      <div
+        className={`absolute right-0 top-0 h-full flex items-center transition-transform duration-300 ${
+          isSwiped
+            ? 'transform -translate-x-[0px]'
+            : 'transform translate-x-[120px]'
+        }`}
+      >
         {/* 수정 버튼 */}
         <button
           onClick={handleEdit}
@@ -83,7 +76,7 @@ const MyPostCard: React.FC<MyPostCardProps> = ({
         >
           수정
         </button>
-        
+
         {/* 삭제 버튼 */}
         <button
           onClick={handleDelete}
@@ -96,4 +89,4 @@ const MyPostCard: React.FC<MyPostCardProps> = ({
   );
 };
 
-export default MyPostCard; 
+export default MyPostCard;

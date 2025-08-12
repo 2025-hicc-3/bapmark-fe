@@ -4,72 +4,105 @@ import Navigation from '../../components/layout/Navigation';
 import PostCard from '../../components/board/PostCard';
 import FloatingWriteButton from '../../components/board/FloatingWriteButton';
 import WriteModal from '../../components/board/WriteModal';
+import type { Post } from '../../types/api';
 
-// 임시 게시물 데이터
-const mockPosts = [
+// 임시 게시물 데이터 (API 명세서에 맞게 수정)
+const mockPosts: Post[] = [
   {
     id: '1',
     title: '카미야가 어쩌구저쩌구',
     content: '내용은 이렇고 저렇고',
-    location: '카미야',
-    author: '사용자1',
-    createdAt: '2024-01-15',
+    address: '카미야',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '1',
+      email: 'user1@example.com',
+    },
   },
   {
     id: '2',
     title: '한신포차 맛있어요',
     content: '정말 맛있는 포차였어요',
-    location: '한신포차',
-    author: '사용자2',
-    createdAt: '2024-01-14',
+    address: '한신포차',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '2',
+      email: 'user2@example.com',
+    },
   },
   {
     id: '3',
     title: '가미우동 추천',
     content: '우동이 정말 맛있어요',
-    location: '가미우동',
-    author: '사용자3',
-    createdAt: '2024-01-13',
+    address: '가미우동',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '3',
+      email: 'user3@example.com',
+    },
   },
   {
     id: '4',
     title: '맛집 발견했어요',
     content: '이곳 꼭 가보세요',
-    location: '맛집',
-    author: '사용자4',
-    createdAt: '2024-01-12',
+    address: '맛집',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '4',
+      email: 'user4@example.com',
+    },
   },
   {
     id: '5',
     title: '오늘 점심 메뉴',
     content: '오늘 점심 뭐 먹을까요',
-    location: '점심',
-    author: '사용자5',
-    createdAt: '2024-01-11',
+    address: '점심',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '5',
+      email: 'user5@example.com',
+    },
   },
   {
     id: '6',
     title: '저녁 맛집 추천',
     content: '저녁에 먹기 좋은 곳',
-    location: '저녁',
-    author: '사용자6',
-    createdAt: '2024-01-10',
+    address: '저녁',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '6',
+      email: 'user6@example.com',
+    },
   },
   {
     id: '7',
     title: '주말 맛집 탐방',
     content: '주말에 가볼만한 곳',
-    location: '주말',
-    author: '사용자7',
-    createdAt: '2024-01-09',
+    address: '주말',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '7',
+      email: 'user7@example.com',
+    },
   },
   {
     id: '8',
     title: '디저트 맛집',
     content: '달콤한 디저트 맛집',
-    location: '디저트',
-    author: '사용자8',
-    createdAt: '2024-01-08',
+    address: '디저트',
+    latitude: 37.5665,
+    longitude: 126.978,
+    user: {
+      id: '8',
+      email: 'user8@example.com',
+    },
   },
 ];
 
@@ -96,13 +129,7 @@ const BoardPage = () => {
           {/* 게시물 목록 */}
           <div className="space-y-3">
             {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                title={post.title}
-                content={post.content}
-                location={post.location}
-              />
+              <PostCard key={post.id} post={post} />
             ))}
           </div>
         </div>
