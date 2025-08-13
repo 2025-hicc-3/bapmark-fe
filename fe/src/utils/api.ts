@@ -33,12 +33,30 @@ class ApiClient {
     };
 
     if (token) {
+      // JWT 토큰 만료 시간 확인
+      const isTokenExpired = this.isTokenExpired(token);
+      const isTokenExpiringSoon = this.isTokenExpiringSoon(token);
+
+      if (isTokenExpired) {
+        console.warn('JWT 토큰이 만료되었습니다. 로그아웃 처리합니다.');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userData');
+        window.location.href = '/';
+        return headers;
+      }
+
+      if (isTokenExpiringSoon) {
+        console.warn('JWT 토큰이 곧 만료됩니다. (10분 이내)');
+      }
+
       headers['Authorization'] = `Bearer ${token}`;
       console.log('토큰 전송됨:', {
         hasToken: !!token,
         tokenLength: token.length,
         tokenStart: token.substring(0, 20) + '...',
         fullToken: token, // 전체 JWT 토큰 표시
+        isExpired: isTokenExpired,
+        isExpiringSoon: isTokenExpiringSoon,
         headers: headers,
       });
     } else {
@@ -48,6 +66,31 @@ class ApiClient {
     }
 
     return headers;
+  }
+
+  // JWT 토큰 만료 여부 확인
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      return payload.exp < currentTime;
+    } catch (error) {
+      console.error('토큰 파싱 실패:', error);
+      return true; // 파싱 실패 시 만료된 것으로 간주
+    }
+  }
+
+  // JWT 토큰이 곧 만료될 예정인지 확인 (10분 이내)
+  private isTokenExpiringSoon(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      const timeUntilExpiry = payload.exp - currentTime;
+      return timeUntilExpiry < 600; // 10분 (600초) 이내
+    } catch (error) {
+      console.error('토큰 파싱 실패:', error);
+      return false;
+    }
   }
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
@@ -127,6 +170,16 @@ class ApiClient {
         method: 'GET',
         headers: headers,
       });
+
+      // 응답이 HTML인 경우 (잘못된 엔드포인트 또는 서버 문제)
+      if (response.headers.get('content-type')?.includes('text/html')) {
+        console.error(
+          '서버가 HTML 응답을 반환했습니다. API 엔드포인트를 확인해주세요.'
+        );
+        return {
+          error: '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.',
+        };
+      }
 
       return this.handleResponse<T>(response);
     } catch {

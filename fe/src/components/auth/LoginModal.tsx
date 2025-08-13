@@ -14,20 +14,34 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isRefreshingUser, setIsRefreshingUser] = useState(false);
   const { isLoggedIn, login, logout, user } = useAuth();
 
   // 사용자 정보 새로고침
   const refreshUserInfo = async () => {
     if (!isLoggedIn) return;
 
-    setIsRefreshingUser(true);
     try {
       // userAPI.getMe()를 사용하여 현재 사용자 정보 가져오기
       const { data, error } = await userAPI.getMe();
 
       if (error || !data) {
         console.error('사용자 정보 조회 실패:', error);
+
+        // 에러 타입에 따른 대응
+        if (error?.includes('서버 연결에 문제가 있습니다')) {
+          console.warn('서버 연결 문제로 사용자 정보를 가져올 수 없습니다.');
+          // 기존 user 정보를 유지하고 에러 메시지만 표시
+          return;
+        }
+
+        if (error?.includes('인증이 필요합니다')) {
+          console.warn('JWT 토큰이 만료되었거나 유효하지 않습니다.');
+          // 로그아웃 처리
+          logout();
+          onClose();
+          return;
+        }
+
         return;
       }
 
@@ -35,8 +49,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       setCurrentUser(data);
     } catch (error) {
       console.error('사용자 정보 새로고침 중 오류:', error);
-    } finally {
-      setIsRefreshingUser(false);
+
+      // 네트워크 오류나 기타 예외 상황
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('네트워크 연결에 문제가 있습니다.');
+      }
     }
   };
 
@@ -326,28 +343,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 {/* 사용자 정보 새로고침 버튼 */}
                 <button
                   onClick={refreshUserInfo}
-                  disabled={isRefreshingUser}
                   className="inline-flex items-center px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="최신 사용자 정보 가져오기"
                 >
-                  {isRefreshingUser ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  ) : (
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  )}
-                  {isRefreshingUser ? '새로고침 중...' : '정보 새로고침'}
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  {isLoading ? '새로고침 중...' : '정보 새로고침'}
                 </button>
               </div>
 
