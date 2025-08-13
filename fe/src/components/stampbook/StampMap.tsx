@@ -3,6 +3,8 @@ import shareIcon from '../../assets/icons/share.svg';
 import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
 import fillMarkIcon from '../../assets/icons/fill_mark.svg';
 import PlaceDetailModal from '../map/PlaceDetailModal';
+import { useStamp } from '../../store/StampContext';
+import { authAPI } from '../../utils/api';
 
 interface Place {
   id: string;
@@ -13,6 +15,8 @@ interface Place {
   address?: string;
   sourceTitle?: string;
   sourceContent?: string;
+  isBookmarked?: boolean;
+  currentStampBoards?: string[];
 }
 
 interface StampBook {
@@ -44,6 +48,69 @@ const StampMap: React.FC<StampMapProps> = ({
   const markersRef = useRef<any[]>([]);
 
   const apiKey = import.meta.env.VITE_KAKAO_MAP_API_KEY;
+
+  // StampContext에서 데이터 가져오기
+  const { stampData, updateBookmarkVisited } = useStamp();
+
+  // 북마크 저장 핸들러
+  const handleBookmarkSave = async (place: Place) => {
+    try {
+      // TODO: 실제 API 호출로 북마크 저장
+      console.log('북마크 저장:', place.name);
+      // 성공 시 place.isBookmarked를 true로 설정
+    } catch (error) {
+      console.error('북마크 저장 실패:', error);
+      alert('북마크 저장에 실패했습니다.');
+    }
+  };
+
+  // 북마크 토글 핸들러
+  const handleBookmarkToggle = async (place: Place) => {
+    try {
+      // TODO: 실제 API 호출로 북마크 상태 변경
+      console.log('북마크 토글:', place.name);
+      // 성공 시 place.isBookmarked를 반전
+    } catch (error) {
+      console.error('북마크 토글 실패:', error);
+      alert('북마크 상태 변경에 실패했습니다.');
+    }
+  };
+
+  // 방문 상태 토글 핸들러
+  const handleVisitToggle = async (place: Place) => {
+    try {
+      // TODO: 실제 API 호출로 방문 상태 변경
+      console.log('방문 상태 토글:', place.name);
+      // 성공 시 place.isVisited를 반전
+    } catch (error) {
+      console.error('방문 상태 변경 실패:', error);
+      alert('방문 상태 변경에 실패했습니다.');
+    }
+  };
+
+  // 스탬프북에 추가 핸들러
+  const handleAddToStampBoard = async (place: Place, stampBoardId: string) => {
+    try {
+      // TODO: 실제 API 호출로 스탬프북에 추가
+      console.log('스탬프북에 추가:', place.name, stampBoardId);
+      // 성공 시 place.currentStampBoards에 stampBoardId 추가
+    } catch (error) {
+      console.error('스탬프북 추가 실패:', error);
+      alert('스탬프북에 추가하는데 실패했습니다.');
+    }
+  };
+
+  // 스탬프북에서 제거 핸들러
+  const handleRemoveFromStampBoard = async (place: Place, stampBoardId: string) => {
+    try {
+      // TODO: 실제 API 호출로 스탬프북에서 제거
+      console.log('스탬프북에서 제거:', place.name, stampBoardId);
+      // 성공 시 place.currentStampBoards에서 stampBoardId 제거
+    } catch (error) {
+      console.error('스탬프북 제거 실패:', error);
+      alert('스탬프북에서 제거하는데 실패했습니다.');
+    }
+  };
 
   // 카카오맵 SDK 로드
   const loadKakaoMapSDK = () => {
@@ -168,7 +235,19 @@ const StampMap: React.FC<StampMapProps> = ({
             // 마커 클릭 이벤트
             kakao.maps.event.addListener(marker, 'click', function () {
               console.log(`${place.name} 마커 클릭됨`);
-              setSelectedPlace(place);
+              
+              // Place 객체에 필요한 속성들을 추가
+              const enhancedPlace: Place = {
+                ...place,
+                isBookmarked: true, // 스탬프북에 있는 장소는 북마크된 것으로 간주
+                currentStampBoards: [stampBook.id], // 현재 스탬프북에 속해있음
+                address: place.address || '주소 정보 없음',
+                sourceTitle: undefined,
+                sourceContent: undefined
+              };
+              
+              console.log('Enhanced Place:', enhancedPlace);
+              setSelectedPlace(enhancedPlace);
               setIsPlaceDetailModalOpen(true);
             });
           });
@@ -375,6 +454,16 @@ const StampMap: React.FC<StampMapProps> = ({
         onClose={handleClosePlaceDetailModal}
         onKakaoMap={handleKakaoMap}
         onNaverMap={handleNaverMap}
+        onBookmarkSave={handleBookmarkSave}
+        onBookmarkToggle={handleBookmarkToggle}
+        onVisitToggle={handleVisitToggle}
+        onAddToStampBoard={handleAddToStampBoard}
+        onRemoveFromStampBoard={handleRemoveFromStampBoard}
+        stampBoards={stampData.stampBoards.map(board => ({
+          id: board.id,
+          title: board.title,
+          color: board.color
+        }))}
       />
     </div>
   );

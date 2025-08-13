@@ -12,11 +12,18 @@
 
    ```
    VITE_KAKAO_MAP_API_KEY=your_kakao_map_javascript_key_here
+   VITE_KAKAO_REST_API_KEY=your_kakao_rest_api_key_here
    ```
 
 3. **API 키 적용**
    - `your_kakao_map_javascript_key_here` 부분을 실제 발급받은 JavaScript 키로 교체
+   - `your_kakao_rest_api_key_here` 부분을 실제 발급받은 REST API 키로 교체
    - 개발 서버 재시작
+
+4. **카카오 REST API 활성화**
+   - 카카오 개발자 센터에서 "플랫폼" > "Web" 설정
+   - "카카오 로그인" > "활성화 설정" > "REST API 키" 확인
+   - "카카오 로그인" > "동의항목" 설정
 
 ## Google OAuth 클라이언트 ID 설정
 

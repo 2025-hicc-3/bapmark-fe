@@ -13,6 +13,7 @@ interface Place {
   lat: number;
   lng: number;
   isVisited: boolean;
+  address?: string;
 }
 
 interface Stamp {
@@ -58,6 +59,7 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
       lat: bookmark.latitude,
       lng: bookmark.longitude,
       isVisited: bookmark.visited,
+      address: bookmark.address,
     })),
   }));
 

@@ -3,7 +3,7 @@ import { authAPI } from '../../utils/api';
 import { useAuth } from '../../store/AuthContext';
 import type { User } from '../../types/auth';
 import loginIcon from '../../assets/icons/login.svg';
-import stampIcon from '../../assets/icons/stamp.svg';
+import NicknameChangeModal from './NicknameChangeModal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
   const { isLoggedIn, login, logout, user } = useAuth();
 
   if (!isOpen) return null;
@@ -100,6 +101,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const handleLogout = () => {
     logout();
     onClose();
+  };
+
+  const handleSettingsClick = () => {
+    setShowNicknameModal(true);
   };
 
   return (
@@ -231,66 +236,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* 스탬프 정보 */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">내 스탬프</span>
-                  <div className="flex items-center space-x-2">
-                    <img src={stampIcon} alt="스탬프" className="w-5 h-5" />
-                    <span className="font-bold text-lg">5/10</span>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: '50%' }}
-                  ></div>
-                </div>
-              </div>
-
               {/* 메뉴 옵션들 */}
               <div className="space-y-3">
-                <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">내 스탬프북</span>
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </button>
-
-                <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={handleSettingsClick}
+                  className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-gray-800">설정</span>
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </button>
-
-                <button className="w-full text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">도움말</span>
                     <svg
                       className="w-5 h-5 text-gray-400"
                       fill="none"
@@ -319,6 +272,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           )}
         </div>
       </div>
+      <NicknameChangeModal
+        isOpen={showNicknameModal}
+        onClose={() => setShowNicknameModal(false)}
+        currentNickname={user?.nickname || '사용자'}
+      />
     </div>
   );
 };
