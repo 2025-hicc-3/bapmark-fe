@@ -42,13 +42,71 @@ interface StampProviderProps {
 }
 
 export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const [stampData, setStampData] = useState<StampData>({
     stampBoards: [],
     bookmarks: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 테스트 사용자인지 확인하는 함수
+  const isTestUser = (): boolean => {
+    if (!user) return false;
+
+    // 테스트 사용자 구분 기준
+    // 1. 이메일이 테스트 도메인인 경우
+    // 2. 사용자 ID가 테스트 패턴인 경우
+    // 3. 닉네임이 테스트 관련인 경우
+    const testPatterns = [
+      'test',
+      'demo',
+      'example',
+      'sample',
+      'dummy',
+      'fake',
+      'mock',
+    ];
+
+    const email = user.email?.toLowerCase() || '';
+    const nickname = user.nickname?.toLowerCase() || '';
+    const userId = user.id?.toLowerCase() || '';
+
+    // 테스트 도메인 체크
+    if (
+      email.includes('@test.com') ||
+      email.includes('@example.com') ||
+      email.includes('@demo.com')
+    ) {
+      return true;
+    }
+
+    // 테스트 패턴 체크
+    for (const pattern of testPatterns) {
+      if (
+        email.includes(pattern) ||
+        nickname.includes(pattern) ||
+        userId.includes(pattern)
+      ) {
+        return true;
+      }
+    }
+
+    // Google 로그인 사용자는 테스트 사용자가 아님
+    if (
+      email.includes('@gmail.com') ||
+      email.includes('@google.com') ||
+      email.includes('@outlook.com') ||
+      email.includes('@hotmail.com') ||
+      email.includes('@naver.com') ||
+      email.includes('@daum.net') ||
+      email.includes('@kakao.com')
+    ) {
+      return false;
+    }
+
+    return false;
+  };
 
   // 테스트용 하드코딩 데이터 (API 응답 형식과 동일)
   const getTestData = (): StampData => {
@@ -221,9 +279,19 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
   // 스탬프 데이터 새로고침
   const refreshStampData = async () => {
     if (!isLoggedIn) {
+      console.log('로그인되지 않음: 빈 데이터 설정');
       setStampData({ stampBoards: [], bookmarks: [] });
       return;
     }
+
+    // 사용자 타입 로깅
+    const testUser = isTestUser();
+    console.log('사용자 정보:', {
+      email: user?.email,
+      nickname: user?.nickname,
+      userId: user?.id,
+      isTestUser: testUser,
+    });
 
     setIsLoading(true);
     setError(null);
@@ -237,9 +305,9 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
         setStampData(apiData);
         console.log('백엔드 API에서 스탬프 데이터를 성공적으로 가져왔습니다.');
       } else {
-        // API 호출 실패 시 테스트 데이터 사용 (개발 환경에서만)
-        if (import.meta.env.DEV) {
-          console.warn('API 호출 실패로 테스트 데이터를 사용합니다.');
+        // API 호출 실패 시 테스트 사용자인 경우에만 테스트 데이터 사용
+        if (testUser && import.meta.env.DEV) {
+          console.warn('테스트 사용자이므로 테스트 데이터를 사용합니다.');
           const testData = getTestData();
           const allBookmarks = extractAllBookmarks(testData.stampBoards);
 
@@ -248,15 +316,24 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
             bookmarks: allBookmarks,
           });
         } else {
-          setError('스탬프 데이터를 불러오는데 실패했습니다.');
+          // Google 로그인 사용자이거나 테스트 사용자가 아닌 경우 빈 데이터
+          console.log(
+            'Google 로그인 사용자이거나 테스트 사용자가 아니므로 빈 데이터를 설정합니다.'
+          );
+          // 맵이 표시되도록 최소한의 기본 데이터 제공
+          setStampData({
+            stampBoards: [],
+            bookmarks: [],
+          });
         }
       }
     } catch (error) {
       console.error('스탬프 데이터 새로고침 실패:', error);
       setError('스탬프 데이터를 불러오는데 실패했습니다.');
 
-      // 개발 환경에서만 테스트 데이터 사용
-      if (import.meta.env.DEV) {
+      // 테스트 사용자인 경우에만 테스트 데이터 사용
+      if (testUser && import.meta.env.DEV) {
+        console.warn('테스트 사용자이므로 테스트 데이터를 사용합니다.');
         const testData = getTestData();
         const allBookmarks = extractAllBookmarks(testData.stampBoards);
 
@@ -264,6 +341,12 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
           stampBoards: testData.stampBoards,
           bookmarks: allBookmarks,
         });
+      } else {
+        // Google 로그인 사용자이거나 테스트 사용자가 아닌 경우 빈 데이터
+        console.log(
+          'Google 로그인 사용자이거나 테스트 사용자가 아니므로 빈 데이터를 설정합니다.'
+        );
+        setStampData({ stampBoards: [], bookmarks: [] });
       }
     } finally {
       setIsLoading(false);

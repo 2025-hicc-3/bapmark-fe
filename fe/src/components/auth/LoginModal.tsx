@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { authAPI } from '../../utils/api';
+import React, { useState, useEffect } from 'react';
+import { authAPI, userAPI } from '../../utils/api';
 import { useAuth } from '../../store/AuthContext';
 import type { User } from '../../types/auth';
 import loginIcon from '../../assets/icons/login.svg';
@@ -13,7 +13,42 @@ interface LoginModalProps {
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isRefreshingUser, setIsRefreshingUser] = useState(false);
   const { isLoggedIn, login, logout, user } = useAuth();
+
+  // 사용자 정보 새로고침
+  const refreshUserInfo = async () => {
+    if (!isLoggedIn) return;
+
+    setIsRefreshingUser(true);
+    try {
+      // userAPI.getMe()를 사용하여 현재 사용자 정보 가져오기
+      const { data, error } = await userAPI.getMe();
+
+      if (error || !data) {
+        console.error('사용자 정보 조회 실패:', error);
+        return;
+      }
+
+      console.log('최신 사용자 정보 받아옴:', data);
+      setCurrentUser(data);
+    } catch (error) {
+      console.error('사용자 정보 새로고침 중 오류:', error);
+    } finally {
+      setIsRefreshingUser(false);
+    }
+  };
+
+  // 모달이 열릴 때마다 사용자 정보 새로고침
+  useEffect(() => {
+    if (isOpen && isLoggedIn) {
+      refreshUserInfo();
+    }
+  }, [isOpen, isLoggedIn]);
+
+  // 현재 표시할 사용자 정보 (API에서 받아온 최신 정보 우선)
+  const displayUser = currentUser || user;
 
   if (!isOpen) return null;
 
@@ -24,44 +59,95 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleGoogleLogin = async () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) return;
+
     setIsLoading(true);
+
     try {
-      // Google Identity Services - ID 토큰 사용
-      if (
-        typeof window !== 'undefined' &&
-        (window as any).google?.accounts?.id
-      ) {
-        const googleObj = (window as any).google;
-        googleObj.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: async (response: any) => {
-            try {
-              const idToken = response.credential; // ID 토큰 (JWT)
-
-              const { data, error } = await authAPI.googleLogin(idToken);
-              if (error || !data) {
-                throw new Error('인증 실패');
-              }
-
-              // 실제 API 응답에서 사용자 정보를 받아와서 로그인
-              login(data.accessToken, data.user);
-              setIsLoading(false);
-              onClose();
-            } catch {
-              setIsLoading(false);
-              alert('로그인에 실패했습니다. 다시 시도해주세요.');
-            }
-          },
-        });
-
-        // 원탭 프롬프트 표시
-        googleObj.accounts.id.prompt();
-      } else {
-        throw new Error('Google OAuth 라이브러리를 로드할 수 없습니다.');
+      // 환경 변수 체크
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        throw new Error(
+          'Google OAuth 클라이언트 ID가 설정되지 않았습니다. 환경 변수를 확인해주세요.'
+        );
       }
-    } catch {
+
+      console.log('Google OAuth 초기화 시작:', {
+        clientId: clientId ? '설정됨' : '설정되지 않음',
+      });
+
+      // Google OAuth 라이브러리 로드 상태 확인
+      if (typeof window === 'undefined') {
+        throw new Error('브라우저 환경이 아닙니다.');
+      }
+
+      // Google OAuth 라이브러리가 로드될 때까지 대기
+      let retryCount = 0;
+      const maxRetries = 10;
+
+      while (!(window as any).google?.accounts?.id && retryCount < maxRetries) {
+        console.log(
+          `Google OAuth 라이브러리 로드 대기 중... (${retryCount + 1}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        retryCount++;
+      }
+
+      if (!(window as any).google?.accounts?.id) {
+        throw new Error(
+          'Google OAuth 라이브러리를 로드할 수 없습니다. 페이지를 새로고침해주세요.'
+        );
+      }
+
+      console.log('Google OAuth 라이브러리 로드 완료');
+
+      const googleObj = (window as any).google;
+
+      // Google OAuth 초기화
+      googleObj.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response: any) => {
+          try {
+            console.log('Google OAuth 콜백 호출됨:', response);
+            const idToken = response.credential; // ID 토큰 (JWT)
+
+            const { data, error } = await authAPI.googleLogin(idToken);
+            if (error || !data) {
+              throw new Error('인증 실패');
+            }
+
+            // 실제 API 응답에서 사용자 정보를 받아와서 로그인
+            login(data.accessToken, data.user);
+            setIsLoading(false);
+            onClose();
+          } catch (error) {
+            console.error('Google 로그인 콜백 에러:', error);
+            setIsLoading(false);
+            alert('로그인에 실패했습니다. 다시 시도해주세요.');
+          }
+        },
+        cancel_callback: () => {
+          // 사용자가 로그인을 취소한 경우
+          console.log('Google 로그인 취소됨');
+          setIsLoading(false);
+        },
+      });
+
+      console.log('Google OAuth 초기화 완료, 프롬프트 표시 시작');
+
+      // 원탭 프롬프트 표시
+      googleObj.accounts.id.prompt();
+
+      console.log('Google OAuth 프롬프트 표시 완료');
+    } catch (error) {
+      console.error('Google 로그인 초기화 에러:', error);
       setIsLoading(false);
-      alert('Google 로그인을 초기화할 수 없습니다.');
+      alert(
+        `Google 로그인 초기화 실패: ${
+          error instanceof Error ? error.message : '알 수 없는 오류'
+        }`
+      );
     }
   };
 
@@ -213,9 +299,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               {/* 사용자 프로필 */}
               <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
-                  {user?.picture ? (
+                  {displayUser?.picture ? (
                     <img
-                      src={user.picture}
+                      src={displayUser.picture}
                       alt="사용자"
                       className="w-20 h-20 rounded-full"
                     />
@@ -225,15 +311,44 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {user?.nickname || user?.name || '사용자'}
+                    {displayUser?.nickname || displayUser?.name || '사용자'}
                   </h2>
                   <p className="text-gray-600">
-                    {user?.email || '이메일 없음'}
+                    {displayUser?.email || '이메일 없음'}
                   </p>
-                  {user?.nickname && (
-                    <p className="text-sm text-gray-500">({user.name})</p>
+                  {displayUser?.nickname && (
+                    <p className="text-sm text-gray-500">
+                      ({displayUser.name})
+                    </p>
                   )}
                 </div>
+
+                {/* 사용자 정보 새로고침 버튼 */}
+                <button
+                  onClick={refreshUserInfo}
+                  disabled={isRefreshingUser}
+                  className="inline-flex items-center px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="최신 사용자 정보 가져오기"
+                >
+                  {isRefreshingUser ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  ) : (
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  )}
+                  {isRefreshingUser ? '새로고침 중...' : '정보 새로고침'}
+                </button>
               </div>
 
               {/* 메뉴 옵션들 */}
@@ -275,7 +390,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       <NicknameChangeModal
         isOpen={showNicknameModal}
         onClose={() => setShowNicknameModal(false)}
-        currentNickname={user?.nickname || '사용자'}
+        currentNickname={displayUser?.nickname || '사용자'}
       />
     </div>
   );

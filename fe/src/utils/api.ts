@@ -34,6 +34,17 @@ class ApiClient {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      console.log('토큰 전송됨:', {
+        hasToken: !!token,
+        tokenLength: token.length,
+        tokenStart: token.substring(0, 20) + '...',
+        fullToken: token, // 전체 JWT 토큰 표시
+        headers: headers,
+      });
+    } else {
+      console.warn(
+        '토큰이 없음 - localStorage에서 accessToken을 찾을 수 없습니다'
+      );
     }
 
     return headers;
@@ -54,19 +65,67 @@ class ApiClient {
       return { error: errorData.message || `HTTP ${response.status} 오류` };
     }
 
+    // 응답 본문이 비어있는지 확인
+    const responseText = await response.text();
+
+    if (!responseText || responseText.trim() === '') {
+      console.warn('빈 응답 받음:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+      return { error: '서버에서 빈 응답을 반환했습니다.' };
+    }
+
     try {
-      const data = await response.json();
+      const data = JSON.parse(responseText);
       return { data };
-    } catch {
+    } catch (parseError) {
+      console.error('응답 파싱 실패:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
+        responseText: responseText.substring(0, 200), // 처음 200자만 로그
+        parseError,
+      });
+
+      // HTML 응답인지 확인
+      if (
+        responseText.includes('<!DOCTYPE') ||
+        responseText.includes('<html')
+      ) {
+        return {
+          error:
+            '서버가 HTML 페이지를 반환했습니다. API 엔드포인트를 확인해주세요.',
+        };
+      }
+
+      // 일반 텍스트 응답인지 확인
+      if (
+        responseText.includes('<!DOCTYPE') === false &&
+        responseText.includes('<html') === false
+      ) {
+        return {
+          error: `서버 응답을 파싱할 수 없습니다: ${responseText.substring(0, 100)}`,
+        };
+      }
+
       return { error: '응답을 파싱할 수 없습니다.' };
     }
   }
 
   async get<T = any>(endpoint: string): Promise<ApiResponse<T>> {
     try {
+      const headers = this.getAuthHeaders();
+      console.log('GET 요청 전송:', {
+        url: `${this.baseURL}${endpoint}`,
+        headers: headers,
+        hasAuth: !!headers.Authorization,
+      });
+
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: headers,
       });
 
       return this.handleResponse<T>(response);

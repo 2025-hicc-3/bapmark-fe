@@ -43,29 +43,37 @@ const MapPage = () => {
       stampDataLength: stampData?.bookmarks?.length || 0,
       stampLoading,
       stampError: !!stampError,
+      isLoggedIn: !!stampData, // stampData가 있으면 로그인된 것으로 간주
     });
-  }, []);
+  }, [stampData, stampLoading, stampError]);
 
   // 모든 장소를 하나의 배열로 변환
-  const allPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => ({
-    id: bookmark.id,
-    name: bookmark.placeName,
-    lat: bookmark.latitude,
-    lng: bookmark.longitude,
-    isVisited: bookmark.visited,
-    address: bookmark.address,
-    sourceTitle: bookmark.post?.title,
-    sourceContent: bookmark.post?.title
-      ? `${bookmark.post.title}에서 가져온 장소입니다.`
-      : undefined,
-    isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
-    currentStampBoards: [], // TODO: 실제 스탬프북 정보를 가져와서 설정
-  }));
+  const allPlaces: PlaceDetail[] = (stampData?.bookmarks || []).map(
+    (bookmark) => ({
+      id: bookmark.id,
+      name: bookmark.placeName,
+      lat: bookmark.latitude,
+      lng: bookmark.longitude,
+      isVisited: bookmark.visited,
+      address: bookmark.address,
+      sourceTitle: bookmark.post?.title,
+      sourceContent: bookmark.post?.title
+        ? `${bookmark.post.title}에서 가져온 장소입니다.`
+        : undefined,
+      isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
+      currentStampBoards: [], // TODO: 실제 스탬프북 정보를 가져와서 설정
+    })
+  );
 
   // allPlaces 변경 시 로그
   useEffect(() => {
-    console.log('allPlaces 변경됨:', allPlaces.length);
-  }, [allPlaces]);
+    console.log('allPlaces 변경됨:', {
+      length: allPlaces.length,
+      places: allPlaces.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng })),
+      stampDataBookmarks: stampData.bookmarks.length,
+      stampDataStampBoards: stampData.stampBoards.length,
+    });
+  }, [allPlaces, stampData.bookmarks.length, stampData.stampBoards.length]);
 
   const handlePlaceClick = useCallback((place: PlaceDetail) => {
     setSelectedPlace(place);
@@ -263,71 +271,93 @@ const MapPage = () => {
   }, []);
 
   // 스탬프북에 장소 추가 처리
-  const handleAddToStampBoard = useCallback(async (place: PlaceDetail, stampBoardId: string) => {
-    try {
-      console.log('스탬프북에 장소 추가 시작:', place.name, '스탬프북 ID:', stampBoardId);
+  const handleAddToStampBoard = useCallback(
+    async (place: PlaceDetail, stampBoardId: string) => {
+      try {
+        console.log(
+          '스탬프북에 장소 추가 시작:',
+          place.name,
+          '스탬프북 ID:',
+          stampBoardId
+        );
 
-      // API 호출하여 스탬프북에 장소 추가
-      const response = await fetch(`/api/stampboards/${stampBoardId}/bookmarks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          placeName: place.name,
-          address: place.address || '',
-          latitude: place.lat,
-          longitude: place.lng,
-        }),
-      });
+        // API 호출하여 스탬프북에 장소 추가
+        const response = await fetch(
+          `/api/stampboards/${stampBoardId}/bookmarks`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              placeName: place.name,
+              address: place.address || '',
+              latitude: place.lat,
+              longitude: place.lng,
+            }),
+          }
+        );
 
-      if (response.ok) {
-        console.log('스탬프북에 장소 추가 성공');
-        
-        // 성공 메시지 표시
-        alert('선택한 스탬프북에 장소가 추가되었습니다!');
-        
-        // 모달 닫기
-        setShowPlaceDetail(false);
-        setSelectedPlace(null);
-      } else {
-        console.error('스탬프북에 장소 추가 실패:', response.status);
-        alert('스탬프북에 장소 추가에 실패했습니다.');
+        if (response.ok) {
+          console.log('스탬프북에 장소 추가 성공');
+
+          // 성공 메시지 표시
+          alert('선택한 스탬프북에 장소가 추가되었습니다!');
+
+          // 모달 닫기
+          setShowPlaceDetail(false);
+          setSelectedPlace(null);
+        } else {
+          console.error('스탬프북에 장소 추가 실패:', response.status);
+          alert('스탬프북에 장소 추가에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('스탬프북에 장소 추가 오류:', error);
+        alert('스탬프북에 장소 추가 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('스탬프북에 장소 추가 오류:', error);
-      alert('스탬프북에 장소 추가 중 오류가 발생했습니다.');
-    }
-  }, []);
+    },
+    []
+  );
 
   // 스탬프북에서 장소 제거 처리
-  const handleRemoveFromStampBoard = useCallback(async (place: PlaceDetail, stampBoardId: string) => {
-    try {
-      console.log('스탬프북에서 장소 제거 시작:', place.name, '스탬프북 ID:', stampBoardId);
+  const handleRemoveFromStampBoard = useCallback(
+    async (place: PlaceDetail, stampBoardId: string) => {
+      try {
+        console.log(
+          '스탬프북에서 장소 제거 시작:',
+          place.name,
+          '스탬프북 ID:',
+          stampBoardId
+        );
 
-      // API 호출하여 스탬프북에서 장소 제거
-      const response = await fetch(`/api/stampboards/${stampBoardId}/bookmarks/${place.id}`, {
-        method: 'DELETE',
-      });
+        // API 호출하여 스탬프북에서 장소 제거
+        const response = await fetch(
+          `/api/stampboards/${stampBoardId}/bookmarks/${place.id}`,
+          {
+            method: 'DELETE',
+          }
+        );
 
-      if (response.ok) {
-        console.log('스탬프북에서 장소 제거 성공');
-        
-        // 성공 메시지 표시
-        alert('선택한 스탬프북에서 장소가 제거되었습니다!');
-        
-        // 모달 닫기
-        setShowPlaceDetail(false);
-        setSelectedPlace(null);
-      } else {
-        console.error('스탬프북에서 장소 제거 실패:', response.status);
-        alert('스탬프북에서 장소 제거에 실패했습니다.');
+        if (response.ok) {
+          console.log('스탬프북에서 장소 제거 성공');
+
+          // 성공 메시지 표시
+          alert('선택한 스탬프북에서 장소가 제거되었습니다!');
+
+          // 모달 닫기
+          setShowPlaceDetail(false);
+          setSelectedPlace(null);
+        } else {
+          console.error('스탬프북에서 장소 제거 실패:', response.status);
+          alert('스탬프북에서 장소 제거에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('스탬프북에서 장소 제거 오류:', error);
+        alert('스탬프북에서 장소 제거 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('스탬프북에서 장소 제거 오류:', error);
-      alert('스탬프북에서 장소 제거 중 오류가 발생했습니다.');
-    }
-  }, []);
+    },
+    []
+  );
 
   const loadKakaoMapSDK = () => {
     return new Promise<void>((resolve, reject) => {
@@ -462,6 +492,8 @@ const MapPage = () => {
       apiKey: !!apiKey,
       isInitializing,
       mapInitializedRef: mapInitializedRef.current,
+      allPlacesLength: allPlaces.length,
+      stampLoading,
     });
 
     if (!apiKey) {
@@ -474,6 +506,7 @@ const MapPage = () => {
       return;
     }
 
+    // 로딩 중이어도 지도는 초기화 (데이터는 나중에 추가)
     const initMap = async () => {
       try {
         console.log('지도 초기화 시작');
@@ -505,7 +538,7 @@ const MapPage = () => {
 
           // 지도 생성
           const options = {
-            center: new kakao.maps.LatLng(37.5665, 126.978), // 서울 시청
+            center: new kakao.maps.LatLng(37.5519, 126.9254), // 홍익대학교
             level: 3,
           };
 
@@ -516,9 +549,14 @@ const MapPage = () => {
           setKakaoMap(newKakaoMap);
           mapInitializedRef.current = true;
 
-          // 초기 마커 생성
-          console.log('초기 마커 생성 시작, allPlaces:', allPlaces.length);
-          createMarkers(newKakaoMap, allPlaces);
+          // 데이터가 있을 때 마커 생성, 없어도 지도는 표시
+          if (allPlaces.length > 0) {
+            console.log('초기 마커 생성 시작, allPlaces:', allPlaces.length);
+            createMarkers(newKakaoMap, allPlaces);
+          } else {
+            console.log('데이터가 없어서 마커 생성 생략, 지도만 표시');
+          }
+
           setSdkLoaded(true);
           setIsInitializing(false);
           console.log('지도 초기화 완료');
@@ -531,7 +569,7 @@ const MapPage = () => {
     };
 
     initMap();
-  }, [apiKey, createMarkers, isInitializing, allPlaces.length]);
+  }, [apiKey, createMarkers, isInitializing]); // stampLoading 의존성 제거
 
   // allPlaces가 변경될 때만 마커 업데이트 (지도가 이미 초기화된 경우)
   useEffect(() => {
@@ -579,35 +617,14 @@ const MapPage = () => {
     );
   }
 
+  // 로딩 중이어도 기본 맵은 표시 (데이터는 비동기로 로드)
   if (stampLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">스탬프 데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    console.log('StampContext 로딩 중, 기본 맵 표시');
   }
 
   if (stampError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">
-            데이터 로드 실패
-          </h1>
-          <p className="text-gray-600 mb-4">{stampError}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            다시 시도
-          </button>
-        </div>
-      </div>
-    );
+    console.error('StampContext 에러 발생:', stampError);
+    // 에러가 발생해도 맵은 계속 표시
   }
 
   return (
@@ -633,6 +650,20 @@ const MapPage = () => {
                       : '지도를 불러오는 중...'}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* StampContext 로딩 상태 표시 */}
+            {stampLoading && (
+              <div className="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs">
+                데이터 로딩 중...
+              </div>
+            )}
+
+            {/* StampContext 에러 상태 표시 */}
+            {stampError && (
+              <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs">
+                데이터 로드 실패
               </div>
             )}
           </div>
