@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import type { Bookmark, StampBoard } from '../types/api';
-import { colorPalette } from '../components/stampbook/colorPalette';
 import { stampBoardAPI } from '../utils/api';
+import { fakeApi } from '../utils/fakeApi';
 
 // API 응답 형식에 맞는 스탬프 데이터 인터페이스
 interface StampData {
@@ -16,15 +16,15 @@ interface StampContextType {
   isLoading: boolean;
   error: string | null;
   refreshStampData: () => void;
-  updateBookmarkVisited: (bookmarkId: string, visited: boolean) => void;
-  addBookmark: (bookmark: Omit<Bookmark, 'id' | 'createdAt' | 'user'>) => void;
-  removeBookmark: (bookmarkId: string) => void;
+  updateBookmarkVisited: (bookmarkId: number, visited: boolean) => void;
+  addBookmark: (bookmark: Omit<Bookmark, 'postId'>) => void;
+  removeBookmark: (bookmarkId: number) => void;
   createStampBoard: (title: string, color: string) => Promise<boolean>;
   updateStampBoard: (
-    boardId: string,
+    boardId: number,
     updates: Partial<StampBoard>
   ) => Promise<boolean>;
-  deleteStampBoard: (boardId: string) => Promise<boolean>;
+  deleteStampBoard: (boardId: number) => Promise<boolean>;
 }
 
 const StampContext = createContext<StampContextType | undefined>(undefined);
@@ -50,123 +50,30 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 테스트용 하드코딩 데이터 (API 응답 형식과 동일)
-  const getTestData = (): StampData => {
-    return {
-      stampBoards: [
-        {
-          id: '1',
-          title: '카페 스탬프',
-          color: colorPalette[0], // 사전 지정된 첫 번째 색상
-          createdAt: '2024-01-01T00:00:00.000Z',
-          user: { id: 'test-user-1' },
-          bookmarks: [
-            {
-              id: '1',
-              placeName: '스타벅스 홍대점',
-              address: '서울 마포구 홍대로 396',
-              latitude: 37.5519,
-              longitude: 126.9255,
-              visited: true,
-              createdAt: '2024-01-01T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-              post: { id: '1', title: '카페 리뷰' },
-            },
-            {
-              id: '2',
-              placeName: '투썸플레이스 홍대점',
-              address: '서울 마포구 홍대로 123',
-              latitude: 37.5575,
-              longitude: 126.92,
-              visited: false,
-              createdAt: '2024-01-02T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-            },
-            {
-              id: '3',
-              placeName: '할리스 커피 홍대점',
-              address: '서울 마포구 홍대로 123',
-              latitude: 37.549,
-              longitude: 126.93,
-              visited: false,
-              createdAt: '2024-01-03T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-            },
-          ],
-        },
-        {
-          id: '2',
-          title: '맛집 스탬프',
-          color: colorPalette[1], // 사전 지정된 두 번째 색상
-          createdAt: '2024-01-04T00:00:00.000Z',
-          user: { id: 'test-user-1' },
-          bookmarks: [
-            {
-              id: '4',
-              placeName: '맛있는 치킨집',
-              address: '서울 강남구 테헤란로 456',
-              latitude: 37.5725,
-              longitude: 126.985,
-              visited: true,
-              createdAt: '2024-01-05T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-              post: { id: '2', title: '맛집 리뷰' },
-            },
-            {
-              id: '5',
-              placeName: '피자나라',
-              address: '서울 마포구 와우산로 789',
-              latitude: 37.5535,
-              longitude: 126.935,
-              visited: false,
-              createdAt: '2024-01-06T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-            },
-            {
-              id: '6',
-              placeName: '스시로',
-              address: '서울 강남구 강남대로 321',
-              latitude: 37.5685,
-              longitude: 126.988,
-              visited: true,
-              createdAt: '2024-01-07T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-              post: { id: '3', title: '스시 맛집' },
-            },
-          ],
-        },
-        {
-          id: '3',
-          title: '일식집 스탬프',
-          color: colorPalette[2], // 사전 지정된 세 번째 색상
-          createdAt: '2024-01-08T00:00:00.000Z',
-          user: { id: 'test-user-1' },
-          bookmarks: [
-            {
-              id: '7',
-              placeName: '우동집',
-              address: '서울 강남구 논현로 654',
-              latitude: 37.5515,
-              longitude: 126.988,
-              visited: true,
-              createdAt: '2024-01-09T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-            },
-            {
-              id: '8',
-              placeName: '라멘집',
-              address: '서울 강남구 강남대로 789',
-              latitude: 37.5795,
-              longitude: 126.991,
-              visited: false,
-              createdAt: '2024-01-10T00:00:00.000Z',
-              user: { id: 'test-user-1' },
-            },
-          ],
-        },
-      ],
-      bookmarks: [],
-    };
+  // 테스트용 데이터 가져오기 - fakeApi 사용
+  const getTestData = async (): Promise<StampData> => {
+    try {
+      // fakeApi 테스트 모드 활성화
+      fakeApi.setTestMode(true);
+
+      // fakeApi에서 데이터 가져오기
+      const [stampBoards, bookmarks] = await Promise.all([
+        fakeApi.getStampBoards(),
+        fakeApi.getBookmarks(),
+      ]);
+
+      return {
+        stampBoards,
+        bookmarks,
+      };
+    } catch (error) {
+      console.error('테스트 데이터 가져오기 실패:', error);
+      // 에러 발생 시 빈 데이터 반환
+      return {
+        stampBoards: [],
+        bookmarks: [],
+      };
+    }
   };
 
   // 모든 북마크를 하나의 배열로 추출
@@ -240,7 +147,7 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
         // API 호출 실패 시 테스트 데이터 사용 (개발 환경에서만)
         if (import.meta.env.DEV) {
           console.warn('API 호출 실패로 테스트 데이터를 사용합니다.');
-          const testData = getTestData();
+          const testData = await getTestData();
           const allBookmarks = extractAllBookmarks(testData.stampBoards);
 
           setStampData({
@@ -257,7 +164,7 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
 
       // 개발 환경에서만 테스트 데이터 사용
       if (import.meta.env.DEV) {
-        const testData = getTestData();
+        const testData = await getTestData();
         const allBookmarks = extractAllBookmarks(testData.stampBoards);
 
         setStampData({
@@ -271,31 +178,27 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
   };
 
   // 북마크 방문 상태 업데이트
-  const updateBookmarkVisited = (bookmarkId: string, visited: boolean) => {
+  const updateBookmarkVisited = (bookmarkId: number, visited: boolean) => {
     setStampData((prev) => ({
       ...prev,
       stampBoards: prev.stampBoards.map((board) => ({
         ...board,
         bookmarks:
           board.bookmarks?.map((bookmark) =>
-            bookmark.id === bookmarkId ? { ...bookmark, visited } : bookmark
+            bookmark.postId === bookmarkId ? { ...bookmark, visited } : bookmark
           ) || [],
       })),
       bookmarks: prev.bookmarks.map((bookmark) =>
-        bookmark.id === bookmarkId ? { ...bookmark, visited } : bookmark
+        bookmark.postId === bookmarkId ? { ...bookmark, visited } : bookmark
       ),
     }));
   };
 
   // 새 북마크 추가
-  const addBookmark = (
-    newBookmark: Omit<Bookmark, 'id' | 'createdAt' | 'user'>
-  ) => {
+  const addBookmark = (newBookmark: Omit<Bookmark, 'postId'>) => {
     const bookmark: Bookmark = {
       ...newBookmark,
-      id: `bookmark-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      user: { id: 'test-user-1' },
+      postId: Date.now(),
     };
 
     setStampData((prev) => ({
@@ -305,17 +208,18 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
   };
 
   // 북마크 제거
-  const removeBookmark = (bookmarkId: string) => {
+  const removeBookmark = (bookmarkId: number) => {
     setStampData((prev) => ({
       ...prev,
       stampBoards: prev.stampBoards.map((board) => ({
         ...board,
         bookmarks:
-          board.bookmarks?.filter((bookmark) => bookmark.id !== bookmarkId) ||
-          [],
+          board.bookmarks?.filter(
+            (bookmark) => bookmark.postId !== bookmarkId
+          ) || [],
       })),
       bookmarks: prev.bookmarks.filter(
-        (bookmark) => bookmark.id !== bookmarkId
+        (bookmark) => bookmark.postId !== bookmarkId
       ),
     }));
   };
@@ -360,7 +264,7 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
 
   // 스탬프보드 업데이트 (백엔드 API 연동)
   const updateStampBoard = async (
-    boardId: string,
+    boardId: number,
     updates: Partial<StampBoard>
   ): Promise<boolean> => {
     try {
@@ -369,7 +273,7 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
       // 제목 업데이트
       if (updates.title) {
         const titleResponse = await stampBoardAPI.updateStampBoardTitle(
-          boardId,
+          boardId.toString(),
           updates.title
         );
         if (titleResponse.error) {
@@ -381,7 +285,7 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
       // 색상 업데이트
       if (updates.color) {
         const colorResponse = await stampBoardAPI.updateStampBoardColor(
-          boardId,
+          boardId.toString(),
           updates.color
         );
         if (colorResponse.error) {
@@ -413,9 +317,9 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
   };
 
   // 스탬프보드 삭제 (백엔드 API 연동)
-  const deleteStampBoard = async (boardId: string): Promise<boolean> => {
+  const deleteStampBoard = async (boardId: number): Promise<boolean> => {
     try {
-      const response = await stampBoardAPI.deleteStampBoard(boardId);
+      const response = await stampBoardAPI.deleteStampBoard(boardId.toString());
 
       if (response.error) {
         console.error('스탬프보드 삭제 실패:', response.error);

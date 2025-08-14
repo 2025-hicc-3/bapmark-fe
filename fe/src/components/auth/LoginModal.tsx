@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { authAPI } from '../../utils/api';
 import { useAuth } from '../../store/AuthContext';
-import type { User } from '../../types/auth';
+import { fakeApi } from '../../utils/fakeApi';
 import loginIcon from '../../assets/icons/login.svg';
 import NicknameChangeModal from './NicknameChangeModal';
 
@@ -65,26 +65,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // 테스트용 로그인 함수 - API 시뮬레이션
+  // 테스트용 로그인 함수 - Fake API 사용
   const handleTestLogin = async () => {
     setIsLoading(true);
 
     try {
-      // API 호출을 시뮬레이션 (실제로는 네트워크 요청 없음)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Fake API 테스트 모드 활성화
+      fakeApi.setTestMode(true);
 
-      // 실제 API 응답과 동일한 구조의 테스트 데이터
-      const testResponse = {
-        accessToken: 'test-access-token-' + Date.now(),
-        user: {
-          id: 'test-user-' + Date.now(),
-          email: 'test@example.com',
-          name: '테스트 사용자',
-          nickname: '테스터',
-          picture: undefined,
-          createdAt: new Date().toISOString(),
-        } as User,
-      };
+      // Fake API를 통한 테스트 로그인
+      const testResponse = await fakeApi.testLogin();
 
       // AuthContext를 통해 로그인 (실제 로그인과 동일한 방식)
       login(testResponse.accessToken, testResponse.user);
@@ -92,7 +82,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       setIsLoading(false);
       alert('테스트 로그인 완료!');
       onClose();
-    } catch {
+    } catch (error) {
+      console.error('테스트 로그인 오류:', error);
       setIsLoading(false);
       alert('테스트 로그인에 실패했습니다.');
     }
@@ -119,11 +110,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             // 로그아웃 상태 - 로고와 로그인 버튼들
             <div className="flex flex-col items-center justify-center h-full px-6 space-y-8">
               {/* 로고 */}
-              <div className="text-center space-y-4 m-5">
-                <div className="w-16 h-16 bg-blue-500 rounded-lg flex items-center justify-center mx-auto">
-                  <span className="text-white font-bold text-2xl">B</span>
+              <div className="text-center m-5">
+                <div className="w-32 h-16 rounded-lg flex items-center justify-center mx-auto overflow-hidden">
+                  <img
+                    src="/bapmark.png"
+                    alt="BapMark"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">BapMark</h1>
               </div>
 
               {/* 구글 로그인 버튼 */}
@@ -213,26 +207,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               {/* 사용자 프로필 */}
               <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
-                  {user?.picture ? (
-                    <img
-                      src={user.picture}
-                      alt="사용자"
-                      className="w-20 h-20 rounded-full"
-                    />
-                  ) : (
-                    <img src={loginIcon} alt="사용자" className="w-10 h-10" />
-                  )}
+                  <img src={loginIcon} alt="사용자" className="w-10 h-10" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {user?.nickname || user?.name || '사용자'}
+                    {user?.nickname || '사용자'}
                   </h2>
                   <p className="text-gray-600">
                     {user?.email || '이메일 없음'}
                   </p>
-                  {user?.nickname && (
-                    <p className="text-sm text-gray-500">({user.name})</p>
-                  )}
                 </div>
               </div>
 

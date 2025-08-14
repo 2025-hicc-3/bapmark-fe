@@ -1,11 +1,8 @@
 // User type definition based on API specification
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  name: string;
-  picture?: string;
-  nickname?: string;
-  createdAt: string;
+  nickname: string;
 }
 
 // Login response type

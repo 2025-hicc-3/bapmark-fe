@@ -1,43 +1,31 @@
 // Post type based on API specification
 export interface Post {
-  id: string;
+  id: number;
   title: string;
   content: string;
   address: string;
   latitude: number;
   longitude: number;
-  user?: {
-    id: string;
-    email: string;
-  };
 }
 
 // Bookmark type based on API specification
 export interface Bookmark {
-  id: string;
-  placeName: string;
+  postId: number;
+  title: string;
   address: string;
   latitude: number;
   longitude: number;
   visited: boolean;
-  createdAt: string;
-  user: {
-    id: string;
-  };
-  post?: {
-    id: string;
-    title: string;
-  };
 }
 
 // StampBoard type based on API specification
 export interface StampBoard {
-  id: string;
+  id: number;
   title: string;
   color: string;
   createdAt: string;
   user: {
-    id: string;
+    id: number;
   };
   bookmarks?: Bookmark[];
 }

@@ -107,11 +107,14 @@ const Header: React.FC<HeaderProps> = ({
       >
         <div className="flex items-center justify-between">
           {/* 로고 */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">B</span>
+          <div className="flex items-center">
+            <div className="w-24 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+              <img
+                src="/bapmark.png"
+                alt="BapMark"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <span className="text-lg font-semibold text-gray-900">BapMark</span>
           </div>
 
           {/* 우측 아이콘들 */}

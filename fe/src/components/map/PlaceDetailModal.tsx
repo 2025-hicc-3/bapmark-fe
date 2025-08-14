@@ -19,7 +19,7 @@ interface Place {
 }
 
 interface StampBoard {
-  id: string;
+  id: number;
   title: string;
   color: string;
 }
@@ -33,8 +33,8 @@ interface PlaceDetailModalProps {
   onBookmarkSave?: (place: Place) => void; // 북마크 저장 콜백 추가
   onBookmarkToggle?: (place: Place) => void; // 북마크 토글 콜백 추가
   onVisitToggle?: (place: Place) => void; // 방문 상태 토글 콜백 추가
-  onAddToStampBoard?: (place: Place, stampBoardId: string) => void; // 스탬프북에 추가 콜백
-  onRemoveFromStampBoard?: (place: Place, stampBoardId: string) => void; // 스탬프북에서 제거 콜백
+  onAddToStampBoard?: (place: Place, stampBoardId: number) => void; // 스탬프북에 추가 콜백
+  onRemoveFromStampBoard?: (place: Place, stampBoardId: number) => void; // 스탬프북에서 제거 콜백
   stampBoards?: StampBoard[]; // 사용자의 스탬프북 목록
 }
 

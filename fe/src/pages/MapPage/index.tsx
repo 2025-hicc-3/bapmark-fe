@@ -48,16 +48,14 @@ const MapPage = () => {
 
   // 모든 장소를 하나의 배열로 변환
   const allPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => ({
-    id: bookmark.id,
-    name: bookmark.placeName,
+    id: bookmark.postId.toString(),
+    name: bookmark.title,
     lat: bookmark.latitude,
     lng: bookmark.longitude,
     isVisited: bookmark.visited,
     address: bookmark.address,
-    sourceTitle: bookmark.post?.title,
-    sourceContent: bookmark.post?.title
-      ? `${bookmark.post.title}에서 가져온 장소입니다.`
-      : undefined,
+    sourceTitle: undefined,
+    sourceContent: undefined,
     isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
     currentStampBoards: [], // TODO: 실제 스탬프북 정보를 가져와서 설정
   }));
@@ -264,7 +262,7 @@ const MapPage = () => {
 
   // 스탬프북에 장소 추가 처리
   const handleAddToStampBoard = useCallback(
-    async (place: PlaceDetail, stampBoardId: string) => {
+    async (place: PlaceDetail, stampBoardId: number) => {
       try {
         console.log(
           '스탬프북에 장소 추가 시작:',
@@ -313,7 +311,7 @@ const MapPage = () => {
 
   // 스탬프북에서 장소 제거 처리
   const handleRemoveFromStampBoard = useCallback(
-    async (place: PlaceDetail, stampBoardId: string) => {
+    async (place: PlaceDetail, stampBoardId: number) => {
       try {
         console.log(
           '스탬프북에서 장소 제거 시작:',
