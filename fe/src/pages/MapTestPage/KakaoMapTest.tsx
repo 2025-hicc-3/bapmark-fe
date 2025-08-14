@@ -18,7 +18,7 @@ const KakaoMapTest = () => {
         if (container) {
           // 지도 생성 (공식 문서 예시)
           const options = {
-            center: new kakao.maps.LatLng(37.5665, 126.978), // 서울 시청
+            center: new kakao.maps.LatLng(37.5519, 126.9255), // 홍익대학교
             level: 3,
           };
 

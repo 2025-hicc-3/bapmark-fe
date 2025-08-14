@@ -101,7 +101,10 @@ const StampMap: React.FC<StampMapProps> = ({
   };
 
   // 스탬프북에서 제거 핸들러
-  const handleRemoveFromStampBoard = async (place: Place, stampBoardId: string) => {
+  const handleRemoveFromStampBoard = async (
+    place: Place,
+    stampBoardId: string
+  ) => {
     try {
       // TODO: 실제 API 호출로 스탬프북에서 제거
       console.log('스탬프북에서 제거:', place.name, stampBoardId);
@@ -171,7 +174,7 @@ const StampMap: React.FC<StampMapProps> = ({
 
           // 지도 생성
           const options = {
-            center: new kakao.maps.LatLng(37.5665, 126.978),
+            center: new kakao.maps.LatLng(37.5519, 126.9255), // 홍익대학교
             level: 3,
           };
 
@@ -235,7 +238,7 @@ const StampMap: React.FC<StampMapProps> = ({
             // 마커 클릭 이벤트
             kakao.maps.event.addListener(marker, 'click', function () {
               console.log(`${place.name} 마커 클릭됨`);
-              
+
               // Place 객체에 필요한 속성들을 추가
               const enhancedPlace: Place = {
                 ...place,
@@ -243,9 +246,9 @@ const StampMap: React.FC<StampMapProps> = ({
                 currentStampBoards: [stampBook.id], // 현재 스탬프북에 속해있음
                 address: place.address || '주소 정보 없음',
                 sourceTitle: undefined,
-                sourceContent: undefined
+                sourceContent: undefined,
               };
-              
+
               console.log('Enhanced Place:', enhancedPlace);
               setSelectedPlace(enhancedPlace);
               setIsPlaceDetailModalOpen(true);
@@ -459,10 +462,10 @@ const StampMap: React.FC<StampMapProps> = ({
         onVisitToggle={handleVisitToggle}
         onAddToStampBoard={handleAddToStampBoard}
         onRemoveFromStampBoard={handleRemoveFromStampBoard}
-        stampBoards={stampData.stampBoards.map(board => ({
+        stampBoards={stampData.stampBoards.map((board) => ({
           id: board.id,
           title: board.title,
-          color: board.color
+          color: board.color,
         }))}
       />
     </div>

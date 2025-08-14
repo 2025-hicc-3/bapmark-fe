@@ -263,71 +263,93 @@ const MapPage = () => {
   }, []);
 
   // 스탬프북에 장소 추가 처리
-  const handleAddToStampBoard = useCallback(async (place: PlaceDetail, stampBoardId: string) => {
-    try {
-      console.log('스탬프북에 장소 추가 시작:', place.name, '스탬프북 ID:', stampBoardId);
+  const handleAddToStampBoard = useCallback(
+    async (place: PlaceDetail, stampBoardId: string) => {
+      try {
+        console.log(
+          '스탬프북에 장소 추가 시작:',
+          place.name,
+          '스탬프북 ID:',
+          stampBoardId
+        );
 
-      // API 호출하여 스탬프북에 장소 추가
-      const response = await fetch(`/api/stampboards/${stampBoardId}/bookmarks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          placeName: place.name,
-          address: place.address || '',
-          latitude: place.lat,
-          longitude: place.lng,
-        }),
-      });
+        // API 호출하여 스탬프북에 장소 추가
+        const response = await fetch(
+          `/api/stampboards/${stampBoardId}/bookmarks`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              placeName: place.name,
+              address: place.address || '',
+              latitude: place.lat,
+              longitude: place.lng,
+            }),
+          }
+        );
 
-      if (response.ok) {
-        console.log('스탬프북에 장소 추가 성공');
-        
-        // 성공 메시지 표시
-        alert('선택한 스탬프북에 장소가 추가되었습니다!');
-        
-        // 모달 닫기
-        setShowPlaceDetail(false);
-        setSelectedPlace(null);
-      } else {
-        console.error('스탬프북에 장소 추가 실패:', response.status);
-        alert('스탬프북에 장소 추가에 실패했습니다.');
+        if (response.ok) {
+          console.log('스탬프북에 장소 추가 성공');
+
+          // 성공 메시지 표시
+          alert('선택한 스탬프북에 장소가 추가되었습니다!');
+
+          // 모달 닫기
+          setShowPlaceDetail(false);
+          setSelectedPlace(null);
+        } else {
+          console.error('스탬프북에 장소 추가 실패:', response.status);
+          alert('스탬프북에 장소 추가에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('스탬프북에 장소 추가 오류:', error);
+        alert('스탬프북에 장소 추가 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('스탬프북에 장소 추가 오류:', error);
-      alert('스탬프북에 장소 추가 중 오류가 발생했습니다.');
-    }
-  }, []);
+    },
+    []
+  );
 
   // 스탬프북에서 장소 제거 처리
-  const handleRemoveFromStampBoard = useCallback(async (place: PlaceDetail, stampBoardId: string) => {
-    try {
-      console.log('스탬프북에서 장소 제거 시작:', place.name, '스탬프북 ID:', stampBoardId);
+  const handleRemoveFromStampBoard = useCallback(
+    async (place: PlaceDetail, stampBoardId: string) => {
+      try {
+        console.log(
+          '스탬프북에서 장소 제거 시작:',
+          place.name,
+          '스탬프북 ID:',
+          stampBoardId
+        );
 
-      // API 호출하여 스탬프북에서 장소 제거
-      const response = await fetch(`/api/stampboards/${stampBoardId}/bookmarks/${place.id}`, {
-        method: 'DELETE',
-      });
+        // API 호출하여 스탬프북에서 장소 제거
+        const response = await fetch(
+          `/api/stampboards/${stampBoardId}/bookmarks/${place.id}`,
+          {
+            method: 'DELETE',
+          }
+        );
 
-      if (response.ok) {
-        console.log('스탬프북에서 장소 제거 성공');
-        
-        // 성공 메시지 표시
-        alert('선택한 스탬프북에서 장소가 제거되었습니다!');
-        
-        // 모달 닫기
-        setShowPlaceDetail(false);
-        setSelectedPlace(null);
-      } else {
-        console.error('스탬프북에서 장소 제거 실패:', response.status);
-        alert('스탬프북에서 장소 제거에 실패했습니다.');
+        if (response.ok) {
+          console.log('스탬프북에서 장소 제거 성공');
+
+          // 성공 메시지 표시
+          alert('선택한 스탬프북에서 장소가 제거되었습니다!');
+
+          // 모달 닫기
+          setShowPlaceDetail(false);
+          setSelectedPlace(null);
+        } else {
+          console.error('스탬프북에서 장소 제거 실패:', response.status);
+          alert('스탬프북에서 장소 제거에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('스탬프북에서 장소 제거 오류:', error);
+        alert('스탬프북에서 장소 제거 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('스탬프북에서 장소 제거 오류:', error);
-      alert('스탬프북에서 장소 제거 중 오류가 발생했습니다.');
-    }
-  }, []);
+    },
+    []
+  );
 
   const loadKakaoMapSDK = () => {
     return new Promise<void>((resolve, reject) => {
@@ -505,7 +527,7 @@ const MapPage = () => {
 
           // 지도 생성
           const options = {
-            center: new kakao.maps.LatLng(37.5665, 126.978), // 서울 시청
+            center: new kakao.maps.LatLng(37.5519, 126.9255), // 홍익대학교
             level: 3,
           };
 
