@@ -34,7 +34,13 @@ const MapPage = () => {
   const [isInitializing, setIsInitializing] = useState(false);
 
   // StampContext에서 데이터 가져오기
-  const { stampData, isLoading: stampLoading, error: stampError, getStampBoardsForPlace, refreshStampData } = useStamp();
+  const {
+    stampData,
+    isLoading: stampLoading,
+    error: stampError,
+    getStampBoardsForPlace,
+    refreshStampData,
+  } = useStamp();
 
   // 컴포넌트 마운트 시 로그
   useEffect(() => {
@@ -54,7 +60,7 @@ const MapPage = () => {
       bookmark.latitude,
       bookmark.longitude
     );
-    
+
     return {
       id: bookmark.postId.toString(),
       name: bookmark.title,
@@ -75,7 +81,10 @@ const MapPage = () => {
     // 각 장소의 스탬프북 정보 로깅
     allPlaces.forEach((place) => {
       if (place.currentStampBoards && place.currentStampBoards.length > 0) {
-        console.log(`장소 "${place.name}"이 포함된 스탬프북:`, place.currentStampBoards);
+        console.log(
+          `장소 "${place.name}"이 포함된 스탬프북:`,
+          place.currentStampBoards
+        );
       }
     });
   }, [allPlaces]);
@@ -275,7 +284,7 @@ const MapPage = () => {
     }
   }, []);
 
-    // 스탬프북에 장소 추가 처리
+  // 스탬프북에 장소 추가 처리
   const handleAddToStampBoard = useCallback(
     async (place: PlaceDetail, stampBoardId: string) => {
       try {
@@ -293,9 +302,12 @@ const MapPage = () => {
           // 테스트 로그인인 경우 fakeApi 사용
           const { fakeApi } = await import('../../utils/fakeApi');
           fakeApi.setTestMode(true);
-          
+
           // fakeApi에서 스탬프보드에 북마크 추가
-          await fakeApi.addBookmarkToStampBoard(parseInt(stampBoardId), parseInt(place.id));
+          await fakeApi.addBookmarkToStampBoard(
+            parseInt(stampBoardId),
+            parseInt(place.id)
+          );
           console.log('테스트 로그인: fakeApi로 스탬프보드에 장소 추가');
         } else {
           // 실제 구글 로그인인 경우 백엔드 API 사용
@@ -305,7 +317,7 @@ const MapPage = () => {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
               },
               body: JSON.stringify(parseInt(place.id)),
             }
@@ -352,9 +364,12 @@ const MapPage = () => {
           // 테스트 로그인인 경우 fakeApi 사용
           const { fakeApi } = await import('../../utils/fakeApi');
           fakeApi.setTestMode(true);
-          
+
           // fakeApi에서 스탬프보드에서 북마크 제거
-          await fakeApi.removeBookmarkFromStampBoard(parseInt(stampBoardId), parseInt(place.id));
+          await fakeApi.removeBookmarkFromStampBoard(
+            parseInt(stampBoardId),
+            parseInt(place.id)
+          );
           console.log('테스트 로그인: fakeApi로 스탬프보드에서 장소 제거');
         } else {
           // 실제 구글 로그인인 경우 백엔드 API 사용
@@ -364,7 +379,7 @@ const MapPage = () => {
               method: 'DELETE',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
               },
               body: JSON.stringify(parseInt(place.id)),
             }

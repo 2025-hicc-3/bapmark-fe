@@ -27,6 +27,20 @@ const BoardPage = () => {
     setFilteredPosts(posts);
   }, [posts]);
 
+  // 로그인 성공 이벤트 리스너 추가
+  useEffect(() => {
+    const handleLoginSuccess = () => {
+      console.log('BoardPage: 로그인 성공 이벤트 감지, 게시글 데이터 새로고침');
+      refreshPostData();
+    };
+
+    window.addEventListener('loginSuccess', handleLoginSuccess);
+
+    return () => {
+      window.removeEventListener('loginSuccess', handleLoginSuccess);
+    };
+  }, [refreshPostData]);
+
   // 장소 검색 결과 처리
   const handlePlaceSelect = (place: SearchResult) => {
     // 검색된 장소와 관련된 게시물 필터링

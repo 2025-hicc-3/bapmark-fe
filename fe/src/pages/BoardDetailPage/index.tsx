@@ -5,15 +5,16 @@ import Navigation from '../../components/layout/Navigation';
 import saveIcon from '../../assets/icons/save.svg';
 import saveFillIcon from '../../assets/icons/save_fill.svg';
 import { usePost } from '../../store/PostContext';
+
 import type { Post } from '../../types/api';
 
 const BoardDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getPost } = usePost();
+  const { posts } = usePost(); // 이미 로드된 게시글 목록 사용
   const [isSaved, setIsSaved] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
@@ -97,28 +98,28 @@ const BoardDetailPage = () => {
   };
 
   useEffect(() => {
-    const fetchPost = async () => {
-      if (!id) return;
+    if (!id || !posts.length) return;
 
-      try {
-        setLoading(true);
-        const postData = await getPost(parseInt(id));
-        if (postData) {
-          setPost(postData);
-        } else {
-          // 게시글을 찾을 수 없는 경우
-          setPost(null);
-        }
-      } catch (error) {
-        console.error('게시물 조회 실패:', error);
-        setPost(null);
-      } finally {
-        setLoading(false);
+    // posts 배열에서 해당 게시글 찾기
+    const postData = posts.find((p) => p.id === parseInt(id));
+
+    if (postData) {
+      setPost(postData);
+
+      // 북마크 상태 초기화 (테스트 모드에서는 기본적으로 북마크된 상태로 표시)
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+      if (isTestLogin) {
+        setIsSaved(true); // 테스트 모드에서는 기본적으로 북마크된 상태
+      } else {
+        // 실제 로그인에서는 사용자의 북마크 상태를 확인해야 함
+        // TODO: GET /users/me/bookmarks로 현재 게시글이 북마크되어 있는지 확인
+        setIsSaved(false);
       }
-    };
-
-    fetchPost();
-  }, [id, getPost]);
+    } else {
+      // 게시글을 찾을 수 없는 경우
+      setPost(null);
+    }
+  }, [id, posts]);
 
   useEffect(() => {
     if (post && !mapLoaded) {
@@ -135,24 +136,84 @@ const BoardDetailPage = () => {
     navigate(-1);
   };
 
-  const handleSaveClick = () => {
-    setIsSaved(!isSaved);
-    // TODO: 실제 북마크 API 호출
-    // if (isSaved) {
-    //   // 북마크 삭제
-    //   await deleteBookmark(post.id);
-    // } else {
-    //   // 북마크 추가
-    //   await addBookmark(post.id);
-    // }
+  const handleSaveClick = async () => {
+    if (!post) return;
+
+    try {
+      // 테스트 로그인인지 확인
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        if (isSaved) {
+          // 북마크 삭제 - 테스트 모드에서는 단순히 상태만 변경
+          console.log('테스트 모드: 북마크 삭제');
+        } else {
+          // 북마크 추가 - 테스트 모드에서는 단순히 상태만 변경
+          console.log('테스트 모드: 북마크 추가');
+        }
+      } else {
+        // 실제 구글 로그인인 경우 실제 API 사용
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          console.error('토큰이 없습니다.');
+          return;
+        }
+
+        if (isSaved) {
+          // 북마크 삭제: DELETE /users/{postId}
+          const baseURL =
+            import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+          const response = await fetch(`${baseURL}/users/${post.id}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`북마크 삭제 실패: ${response.status}`);
+          }
+        } else {
+          // 북마크 추가: POST /users/search
+          const baseURL =
+            import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+          const response = await fetch(
+            `${baseURL}/users/search?placeName=${encodeURIComponent(post.title)}&address=${encodeURIComponent(post.address)}&latitude=${post.latitude}&longitude=${post.longitude}`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`북마크 추가 실패: ${response.status}`);
+          }
+        }
+      }
+
+      // 성공 시 상태 변경
+      setIsSaved(!isSaved);
+      console.log(
+        isSaved ? '북마크가 삭제되었습니다.' : '북마크가 추가되었습니다.'
+      );
+    } catch (error) {
+      console.error('북마크 처리 오류:', error);
+      alert(
+        isSaved ? '북마크 삭제에 실패했습니다.' : '북마크 추가에 실패했습니다.'
+      );
+    }
   };
 
-  if (loading) {
+  // posts가 아직 로드되지 않은 경우
+  if (!posts.length) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-          <p className="text-sm text-gray-600">로딩 중...</p>
+          <p className="text-sm text-gray-600">게시글을 불러오는 중...</p>
         </div>
       </div>
     );

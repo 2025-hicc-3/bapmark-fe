@@ -45,7 +45,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
               // 구글 로그인 플래그 설정
               localStorage.setItem('isTestLogin', 'false');
-              
+
               // 실제 API 응답에서 토큰만으로 로그인 (사용자 정보는 fetchUserInfo에서 가져옴)
               await login(data.accessToken);
               setIsLoading(false);
@@ -81,7 +81,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
       // 테스트 로그인 플래그 설정
       localStorage.setItem('isTestLogin', 'true');
-      
+
       // AuthContext를 통해 로그인 (사용자 정보는 fetchUserInfo에서 가져옴)
       await login(testResponse.accessToken);
 
@@ -166,8 +166,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               {/* 구분선 */}
               <div className="w-full max-w-sm flex items-center">
                 <div className="flex-1 border-t border-gray-300"></div>
-                <span className="px-4 text-gray-500 text-sm">또는</span>
-                <div className="flex-1 border-t border-gray-300"></div>
               </div>
 
               {/* 테스트용 로그인 버튼 */}
@@ -200,12 +198,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   {isLoading ? '테스트 로그인 중...' : '테스트 로그인'}
                 </span>
               </button>
-
-              {/* 테스트 로그인 안내 */}
-              <div className="text-center text-xs text-gray-500 max-w-sm">
-                <p>💡 개발 중 빠른 테스트를 위한 버튼입니다.</p>
-                <p>실제 API 응답을 시뮬레이션하여 로그인 상태를 만듭니다.</p>
-              </div>
             </div>
           ) : (
             // 로그인 상태 - 사용자 정보

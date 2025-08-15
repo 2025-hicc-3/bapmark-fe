@@ -56,7 +56,7 @@ class ApiClient {
 
     // Content-Type 확인하여 JSON인지 문자열인지 판단
     const contentType = response.headers.get('content-type');
-    
+
     if (contentType && contentType.includes('application/json')) {
       try {
         const data = await response.json();

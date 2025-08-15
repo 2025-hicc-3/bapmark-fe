@@ -28,7 +28,8 @@ const ApiTestPage = () => {
         return;
       }
 
-      setTestResult('🔄 API 호출 중...\n');
+      setTestResult('🔄 GET /api/user/me API 호출 중...\n');
+      setTestResult((prev) => prev + `토큰: ${token.substring(0, 20)}...\n`);
 
       const response = await userAPI.getMe();
 
@@ -127,6 +128,240 @@ const ApiTestPage = () => {
     }
   };
 
+  // 홍익대학교를 북마크에 저장하는 테스트
+  const testAddBookmark = async () => {
+    setIsLoading(true);
+    setTestResult('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setTestResult('❌ 토큰이 없습니다. 먼저 로그인해주세요.');
+        return;
+      }
+
+      setTestResult('🔄 POST /users/search API 호출 중...\n');
+      setTestResult((prev) => prev + '홍익대학교를 북마크에 저장합니다.\n\n');
+
+      // 환경변수에서 /api 제거 (북마크 API는 /api 접두사 없음)
+      const baseURL =
+        import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+
+      const response = await fetch(
+        `${baseURL}/users/search?placeName=홍익대학교&address=서울 마포구 상수동 72-1&latitude=37.5519&longitude=126.9255`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.text();
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 성공!\n\n응답 데이터:\n${data}\n\n상태 코드: ${response.status}`
+        );
+      } else {
+        const errorData = await response.text();
+        setTestResult(
+          (prev) => prev + `❌ 실패 (${response.status})\n\n응답:\n${errorData}`
+        );
+      }
+    } catch (error: any) {
+      console.error('북마크 추가 API 테스트 오류:', error);
+      setTestResult((prev) => prev + `❌ 오류: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 사용자의 북마크를 조회하는 테스트
+  const testGetBookmarks = async () => {
+    setIsLoading(true);
+    setTestResult('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setTestResult('❌ 토큰이 없습니다. 먼저 로그인해주세요.');
+        return;
+      }
+
+      setTestResult('🔄 GET /users/me/bookmarks API 호출 중...\n');
+      setTestResult((prev) => prev + `토큰: ${token.substring(0, 20)}...\n`);
+
+      // 환경변수에서 /api 제거 (북마크 API는 /api 접두사 없음)
+      const baseURL =
+        import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+
+      setTestResult(
+        (prev) => prev + `호출 URL: ${baseURL}/users/me/bookmarks\n\n`
+      );
+
+      const response = await fetch(`${baseURL}/users/me/bookmarks`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 성공!\n\n응답 데이터:\n${JSON.stringify(data, null, 2)}\n\n상태 코드: ${response.status}`
+        );
+      } else {
+        const errorData = await response.text();
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ 실패 (${response.status})\n\n응답:\n${errorData}\n\n요청 헤더:\nAuthorization: Bearer ${token.substring(0, 20)}...`
+        );
+      }
+    } catch (error: any) {
+      console.error('북마크 조회 API 테스트 오류:', error);
+      setTestResult((prev) => prev + `❌ 오류: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 방문한 북마크만 조회하는 테스트
+  const testGetVisitedBookmarks = async () => {
+    setIsLoading(true);
+    setTestResult('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setTestResult('❌ 토큰이 없습니다. 먼저 로그인해주세요.');
+        return;
+      }
+
+      setTestResult('🔄 GET /users/me/bookmarks?visited=true API 호출 중...\n');
+
+      // 환경변수에서 /api 제거 (북마크 API는 /api 접두사 없음)
+      const baseURL =
+        import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+
+      const response = await fetch(
+        `${baseURL}/users/me/bookmarks?visited=true`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 성공!\n\n응답 데이터:\n${JSON.stringify(data, null, 2)}\n\n상태 코드: ${response.status}`
+        );
+      } else {
+        const errorData = await response.text();
+        setTestResult(
+          (prev) => prev + `❌ 실패 (${response.status})\n\n응답:\n${errorData}`
+        );
+      }
+    } catch (error: any) {
+      console.error('방문한 북마크 조회 API 테스트 오류:', error);
+      setTestResult((prev) => prev + `❌ 오류: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 토큰 유효성 직접 확인 테스트
+  const testTokenValidity = async () => {
+    setIsLoading(true);
+    setTestResult('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setTestResult('❌ 토큰이 없습니다. 먼저 로그인해주세요.');
+        return;
+      }
+
+      setTestResult('🔄 토큰 유효성 확인 중...\n');
+      setTestResult((prev) => prev + `토큰: ${token.substring(0, 20)}...\n\n`);
+
+      // 먼저 /api/user/me로 토큰 유효성 확인
+      const userResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/user/me`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 토큰 유효성 확인 성공!\n\n사용자 정보:\n${JSON.stringify(userData, null, 2)}\n\n상태 코드: ${userResponse.status}\n\n`
+        );
+      } else {
+        const errorData = await userResponse.text();
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ 토큰 유효성 확인 실패 (${userResponse.status})\n\n응답:\n${errorData}\n\n`
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // 토큰이 유효하면 북마크 API 테스트
+      setTestResult((prev) => prev + '🔄 이제 북마크 API 테스트...\n');
+
+      const baseURL =
+        import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+      const bookmarkResponse = await fetch(`${baseURL}/users/me/bookmarks`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (bookmarkResponse.ok) {
+        const bookmarkData = await bookmarkResponse.json();
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 북마크 API 성공!\n\n응답 데이터:\n${JSON.stringify(bookmarkData, null, 2)}\n\n상태 코드: ${bookmarkResponse.status}`
+        );
+      } else {
+        const errorData = await bookmarkResponse.text();
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ 북마크 API 실패 (${bookmarkResponse.status})\n\n응답:\n${errorData}\n\n요청 URL: ${baseURL}/users/me/bookmarks`
+        );
+      }
+    } catch (error: any) {
+      console.error('토큰 유효성 테스트 오류:', error);
+      setTestResult((prev) => prev + `❌ 오류: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const testWithCustomToken = async () => {
     if (!currentToken.trim()) {
       setTestResult('❌ 커스텀 토큰을 입력해주세요.');
@@ -141,7 +376,7 @@ const ApiTestPage = () => {
 
       // 커스텀 토큰으로 API 호출
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/users/me`,
+        `${import.meta.env.VITE_API_BASE_URL}/user/me`,
         {
           method: 'GET',
           headers: {
@@ -264,7 +499,7 @@ const ApiTestPage = () => {
                   >
                     {isLoading
                       ? '테스트 중...'
-                      : 'GET /users/me 테스트 (현재 토큰)'}
+                      : 'GET /api/user/me 테스트 (현재 토큰)'}
                   </button>
                   <p className="text-xs text-gray-500 mt-1">
                     현재 로그인된 사용자의 토큰으로 사용자 정보 API를
@@ -284,12 +519,96 @@ const ApiTestPage = () => {
                   >
                     {isLoading
                       ? '테스트 중...'
-                      : 'GET /posts/allPosts 테스트 (현재 토큰)'}
+                      : 'GET /api/posts/allPosts 테스트 (현재 토큰)'}
                   </button>
                   <p className="text-xs text-gray-500 mt-1">
                     현재 로그인된 사용자의 토큰으로 전체 게시글 목록 API를
                     테스트합니다.
                   </p>
+                </div>
+
+                {/* 토큰 유효성 및 북마크 API 통합 테스트 */}
+                <div>
+                  <button
+                    onClick={testTokenValidity}
+                    disabled={isLoading || !isLoggedIn}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                      isLoading || !isLoggedIn
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-red-500 text-white hover:bg-red-600'
+                    }`}
+                  >
+                    {isLoading
+                      ? '테스트 중...'
+                      : '🔍 토큰 유효성 + 북마크 API 통합 테스트'}
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    먼저 토큰 유효성을 확인한 후 북마크 API를 테스트합니다.
+                  </p>
+                </div>
+
+                {/* 북마크 관련 테스트 버튼들 */}
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <h3 className="text-md font-semibold text-gray-800">
+                    북마크 API 테스트
+                  </h3>
+
+                  <div>
+                    <button
+                      onClick={testAddBookmark}
+                      disabled={isLoading || !isLoggedIn}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                        isLoading || !isLoggedIn
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-purple-500 text-white hover:bg-purple-600'
+                      }`}
+                    >
+                      {isLoading
+                        ? '테스트 중...'
+                        : 'POST /users/search - 홍익대학교 북마크 추가'}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      홍익대학교를 북마크에 저장하는 API를 테스트합니다.
+                    </p>
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={testGetBookmarks}
+                      disabled={isLoading || !isLoggedIn}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                        isLoading || !isLoggedIn
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-orange-500 text-white hover:bg-orange-600'
+                      }`}
+                    >
+                      {isLoading
+                        ? '테스트 중...'
+                        : 'GET /users/me/bookmarks - 전체 북마크 조회'}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      사용자의 모든 북마크를 조회하는 API를 테스트합니다.
+                    </p>
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={testGetVisitedBookmarks}
+                      disabled={isLoading || !isLoggedIn}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                        isLoading || !isLoggedIn
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-teal-500 text-white hover:bg-teal-600'
+                      }`}
+                    >
+                      {isLoading
+                        ? '테스트 중...'
+                        : 'GET /users/me/bookmarks?visited=true - 방문한 북마크만 조회'}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      방문한 북마크만 필터링하여 조회하는 API를 테스트합니다.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -358,11 +677,25 @@ const ApiTestPage = () => {
                 <strong>GET /posts/allPosts</strong> - 전체 게시글 목록 조회
               </div>
               <div>
+                <strong>POST /users/search</strong> - 장소 정보로 북마크 추가
+              </div>
+              <div>
+                <strong>GET /users/me/bookmarks</strong> - 사용자 북마크 조회
+              </div>
+              <div>
+                <strong>GET /users/me/bookmarks?visited=true</strong> - 방문한
+                북마크만 조회
+              </div>
+              <div>
                 <strong>Headers:</strong> Authorization: Bearer [토큰]
               </div>
               <div>
                 <strong>Base URL:</strong>{' '}
                 {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}
+              </div>
+              <div className="text-xs text-blue-600 mt-2">
+                <strong>참고:</strong> 북마크 관련 API는 /api 접두사 없이
+                /users/... 경로로 호출됩니다.
               </div>
             </div>
           </div>

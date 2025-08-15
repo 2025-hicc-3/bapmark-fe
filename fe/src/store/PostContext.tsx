@@ -51,12 +51,15 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     try {
       let postData: Post[];
 
-      if (import.meta.env.DEV) {
-        // 개발 모드에서는 fakeApi 사용
-        fakeApi.setTestMode(true); // 테스트 모드 활성화
+      // 테스트 로그인인지 확인
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        fakeApi.setTestMode(true);
         postData = await fakeApi.getAllPosts();
       } else {
-        // 프로덕션 모드에서는 실제 API 사용
+        // 실제 구글 로그인인 경우 실제 API 사용
         const response = await postAPI.getAllPosts();
         postData = response.data || [];
       }
@@ -81,12 +84,15 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     try {
       let result: string;
 
-      if (import.meta.env.DEV) {
-        // 개발 모드에서는 fakeApi 사용
-        fakeApi.setTestMode(true); // 테스트 모드 활성화
+      // 테스트 로그인인지 확인
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        fakeApi.setTestMode(true);
         result = await fakeApi.createPost(request);
       } else {
-        // 프로덕션 모드에서는 실제 API 사용
+        // 실제 구글 로그인인 경우 실제 API 사용
         const response = await postAPI.createPost(request);
         result = response.data;
       }
@@ -116,12 +122,15 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     try {
       let result: string;
 
-      if (import.meta.env.DEV) {
-        // 개발 모드에서는 fakeApi 사용
-        fakeApi.setTestMode(true); // 테스트 모드 활성화
+      // 테스트 로그인인지 확인
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        fakeApi.setTestMode(true);
         result = await fakeApi.updatePost(postId, request);
       } else {
-        // 프로덕션 모드에서는 실제 API 사용
+        // 실제 구글 로그인인 경우 실제 API 사용
         const response = await postAPI.updatePost(postId, request);
         result = response.data;
       }
@@ -148,12 +157,15 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     try {
       let result: string;
 
-      if (import.meta.env.DEV) {
-        // 개발 모드에서는 fakeApi 사용
-        fakeApi.setTestMode(true); // 테스트 모드 활성화
+      // 테스트 로그인인지 확인
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        fakeApi.setTestMode(true);
         result = await fakeApi.deletePost(postId);
       } else {
-        // 프로덕션 모드에서는 실제 API 사용
+        // 실제 구글 로그인인 경우 실제 API 사용
         const response = await postAPI.deletePost(postId);
         result = response.data;
       }
@@ -180,12 +192,15 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     try {
       let postData: Post | null;
 
-      if (import.meta.env.DEV) {
-        // 개발 모드에서는 fakeApi 사용
-        fakeApi.setTestMode(true); // 테스트 모드 활성화
+      // 테스트 로그인인지 확인
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        fakeApi.setTestMode(true);
         postData = await fakeApi.getPost(postId);
       } else {
-        // 프로덕션 모드에서는 실제 API 사용
+        // 실제 구글 로그인인 경우 실제 API 사용
         const response = await postAPI.getPost(postId);
         postData = response.data || null;
       }
