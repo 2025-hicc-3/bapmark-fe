@@ -226,6 +226,87 @@ export const fakeStampBoards: StampBoard[] = [
       },
     ],
   },
+  {
+    id: 4,
+    title: '마포구 맛집 스탬프',
+    color: '#e74c3c',
+    createdAt: '2024-01-15T00:00:00.000Z',
+    user: { id: 1 },
+    bookmarks: [
+      {
+        postId: 101,
+        title: '달빛다방',
+        address: '서울 마포구 양화로 160',
+        latitude: 37.5572,
+        longitude: 126.9234,
+        visited: true,
+      },
+      {
+        postId: 102,
+        title: '바다의향기',
+        address: '서울 마포구 양화로 200',
+        latitude: 37.5495,
+        longitude: 126.9145,
+        visited: false,
+      },
+      {
+        postId: 103,
+        title: '스포츠카페',
+        address: '서울 마포구 월드컵북로 240',
+        latitude: 37.5689,
+        longitude: 126.8975,
+        visited: false,
+      },
+      {
+        postId: 104,
+        title: '공덕시장 떡볶이',
+        address: '서울 마포구 공덕로 136',
+        latitude: 37.5445,
+        longitude: 126.9512,
+        visited: true,
+      },
+      {
+        postId: 105,
+        title: '망원한강뷰',
+        address: '서울 마포구 망원로 100',
+        latitude: 37.5567,
+        longitude: 126.9103,
+        visited: false,
+      },
+      {
+        postId: 106,
+        title: '서교동 골목',
+        address: '서울 마포구 와우산로 35길',
+        latitude: 37.5534,
+        longitude: 126.9189,
+        visited: true,
+      },
+      {
+        postId: 107,
+        title: '연남동 카페거리',
+        address: '서울 마포구 연남로 100',
+        latitude: 37.5645,
+        longitude: 126.9256,
+        visited: false,
+      },
+      {
+        postId: 108,
+        title: '성산동 시장',
+        address: '서울 마포구 성산로 200',
+        latitude: 37.5612,
+        longitude: 126.9089,
+        visited: true,
+      },
+      {
+        postId: 109,
+        title: '도화동 골목',
+        address: '서울 마포구 도화로 50',
+        latitude: 37.5398,
+        longitude: 126.9478,
+        visited: false,
+      },
+    ],
+  },
 ];
 
 // Fake API 클래스
@@ -599,6 +680,33 @@ export class FakeAPI {
     return {
       accessToken: `test-token-${Date.now()}`,
     };
+  }
+
+  // 북마크 방문 상태 업데이트 (테스트용)
+  async updateBookmarkVisitStatus(
+    bookmarkId: number,
+    visited: boolean
+  ): Promise<string> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    // fakeBookmarks에서 해당 북마크 찾기
+    const bookmark = fakeBookmarks.find((b) => b.postId === bookmarkId);
+    if (!bookmark) throw new Error('북마크를 찾을 수 없습니다');
+
+    // 방문 상태 업데이트
+    bookmark.visited = visited;
+
+    // fakeStampBoards의 해당 북마크도 업데이트
+    fakeStampBoards.forEach((board) => {
+      board.bookmarks?.forEach((b) => {
+        if (b.postId === bookmarkId) {
+          b.visited = visited;
+        }
+      });
+    });
+
+    return `방문 상태가 ${visited ? '완료' : '미방문'}으로 변경되었습니다.`;
   }
 
   // 지연 시뮬레이션 (실제 API 호출과 비슷한 경험을 위해)

@@ -121,9 +121,9 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   };
 
   // 스탬프북 삭제
-  const handleDeleteStampBoard = async (stampId: number) => {
+  const handleDeleteStampBoard = async (stampId: string) => {
     try {
-      const success = await deleteStampBoard(stampId);
+      const success = await deleteStampBoard(parseInt(stampId));
       if (success) {
         setShowModifyModal(false);
         setSelectedStampForModify(null);
@@ -179,10 +179,13 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const handleSaveModify = async (stampName: string, stampColor: string) => {
     if (selectedStampForModify) {
       try {
-        const success = await updateStampBoard(selectedStampForModify.id, {
-          title: stampName,
-          color: stampColor,
-        });
+        const success = await updateStampBoard(
+          parseInt(selectedStampForModify.id),
+          {
+            title: stampName,
+            color: stampColor,
+          }
+        );
 
         if (success) {
           // 선택된 스탬프도 업데이트
@@ -198,6 +201,22 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
       } catch (error) {
         console.error('스탬프북 수정 중 오류 발생:', error);
       }
+    }
+  };
+
+  // 북마크 방문 상태 토글 함수
+  const handleToggleVisited = async (bookmarkId: number, visited: boolean) => {
+    try {
+      // StampContext에서 북마크 방문 상태 업데이트 함수가 있다면 사용
+      // 현재는 로컬 상태만 업데이트
+      console.log(
+        `북마크 ${bookmarkId} 방문 상태를 ${visited ? '방문완료' : '미방문'}으로 변경`
+      );
+
+      // TODO: 실제 API 호출로 북마크 방문 상태 업데이트
+      // await updateBookmarkVisited(bookmarkId, visited);
+    } catch (error) {
+      console.error('북마크 방문 상태 업데이트 중 오류 발생:', error);
     }
   };
 
@@ -322,11 +341,12 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
           isOpen={showModifyModal}
           stamp={selectedStampForModify}
           stampBoard={stampData.stampBoards.find(
-            (board) => board.id === selectedStampForModify?.id
+            (board) => board.id === parseInt(selectedStampForModify?.id || '0')
           )}
           onClose={handleCloseModifyModal}
           onSave={handleSaveModify}
           onDelete={handleDeleteStampBoard}
+          onToggleVisited={handleToggleVisited}
         />
 
         {/* 새 스탬프북 만들기 모달 */}

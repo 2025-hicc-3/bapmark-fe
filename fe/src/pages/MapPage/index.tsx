@@ -52,28 +52,37 @@ const MapPage = () => {
     });
   }, []);
 
-  // 모든 장소를 하나의 배열로 변환
-  const allPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => {
-    // 해당 장소가 어떤 스탬프북에 포함되어 있는지 확인
-    const currentStampBoards = getStampBoardsForPlace(
-      bookmark.title,
-      bookmark.latitude,
-      bookmark.longitude
-    );
+  // 모든 장소를 하나의 배열로 변환 (로컬 상태로 관리)
+  const [localPlaces, setLocalPlaces] = useState<PlaceDetail[]>([]);
 
-    return {
-      id: bookmark.postId.toString(),
-      name: bookmark.title,
-      lat: bookmark.latitude,
-      lng: bookmark.longitude,
-      isVisited: bookmark.visited,
-      address: bookmark.address,
-      sourceTitle: undefined,
-      sourceContent: undefined,
-      isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
-      currentStampBoards, // 실제 스탬프북 정보 설정
-    };
-  });
+  // stampData가 변경될 때만 localPlaces 업데이트
+  useEffect(() => {
+    const newPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => {
+      // 해당 장소가 어떤 스탬프북에 포함되어 있는지 확인
+      const currentStampBoards = getStampBoardsForPlace(
+        bookmark.title,
+        bookmark.latitude,
+        bookmark.longitude
+      );
+
+      return {
+        id: bookmark.postId.toString(),
+        name: bookmark.title,
+        lat: bookmark.latitude,
+        lng: bookmark.longitude,
+        isVisited: bookmark.visited,
+        address: bookmark.address,
+        sourceTitle: undefined,
+        sourceContent: undefined,
+        isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
+        currentStampBoards, // 실제 스탬프북 정보 설정
+      };
+    });
+    setLocalPlaces(newPlaces);
+  }, [stampData.bookmarks, getStampBoardsForPlace]);
+
+  // allPlaces는 localPlaces를 참조
+  const allPlaces = localPlaces;
 
   // allPlaces 변경 시 로그
   useEffect(() => {
@@ -251,38 +260,60 @@ const MapPage = () => {
     try {
       console.log('방문 상태 토글 시작:', place.name, '현재:', place.isVisited);
 
-      // API 호출하여 방문 상태 업데이트
-      const response = await fetch(`/api/bookmarks/${place.id}/visit`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          visited: !place.isVisited,
-        }),
-      });
+      // 로그인 방식에 따라 API 선택
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
 
-      if (response.ok) {
-        console.log('방문 상태 토글 성공');
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        const { fakeApi } = await import('../../utils/fakeApi');
+        fakeApi.setTestMode(true);
 
-        // 방문 상태 업데이트
-        setSelectedPlace((prev) =>
-          prev ? { ...prev, isVisited: !prev.isVisited } : null
-        );
-
-        // 성공 메시지 표시
-        alert(
-          `방문 상태가 ${!place.isVisited ? '완료' : '미방문'}로 변경되었습니다!`
-        );
+        // fakeApi에서 북마크 방문 상태 업데이트
+        await fakeApi.updateBookmarkVisitStatus(parseInt(place.id), !place.isVisited);
+        console.log('테스트 로그인: fakeApi로 방문 상태 토글');
       } else {
-        console.error('방문 상태 토글 실패:', response.status);
-        alert('방문 상태 변경에 실패했습니다.');
+        // 실제 구글 로그인인 경우 백엔드 API 사용
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/bookmarks/${place.id}/visit`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+            body: JSON.stringify({
+              visited: !place.isVisited,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        console.log('구글 로그인: 백엔드 API로 방문 상태 토글');
       }
+
+      // 방문 상태 업데이트 (로컬 상태만 업데이트)
+      setSelectedPlace((prev) =>
+        prev ? { ...prev, isVisited: !prev.isVisited } : null
+      );
+
+      // 로컬 상태 업데이트로 맵 재초기화 방지
+      setLocalPlaces((prevPlaces) =>
+        prevPlaces.map((p) =>
+          p.id === place.id ? { ...p, isVisited: !p.isVisited } : p
+        )
+      );
+
+      // 마커 아이콘만 업데이트 (맵 재초기화 방지)
+      updateMarkerIcon(place.id, !place.isVisited);
+
+      // 성공 메시지 제거 (사용자 경험 개선)
     } catch (error) {
       console.error('방문 상태 토글 오류:', error);
       alert('방문 상태 변경 중 오류가 발생했습니다.');
     }
-  }, []);
+  }, [refreshStampData]);
 
   // 스탬프북에 장소 추가 처리
   const handleAddToStampBoard = useCallback(
@@ -329,8 +360,7 @@ const MapPage = () => {
           console.log('구글 로그인: 백엔드 API로 스탬프보드에 장소 추가');
         }
 
-        // 성공 메시지 표시
-        alert('선택한 스탬프북에 장소가 추가되었습니다!');
+        // 성공 메시지 제거 (사용자 경험 개선)
 
         // 스탬프 데이터 새로고침
         refreshStampData();
@@ -391,8 +421,7 @@ const MapPage = () => {
           console.log('구글 로그인: 백엔드 API로 스탬프보드에서 장소 제거');
         }
 
-        // 성공 메시지 표시
-        alert('선택한 스탬프북에서 장소가 제거되었습니다!');
+        // 성공 메시지 제거 (사용자 경험 개선)
 
         // 스탬프 데이터 새로고침
         refreshStampData();
@@ -625,6 +654,28 @@ const MapPage = () => {
       createMarkers(kakaoMap, allPlaces);
     }
   }, [allPlaces, createMarkers, kakaoMap]);
+
+  // 방문 상태 변경 시 마커 아이콘만 업데이트 (맵 재초기화 방지)
+  const updateMarkerIcon = useCallback((placeId: string, isVisited: boolean) => {
+    if (!kakaoMap) return;
+
+    // 해당 장소의 마커 찾기
+    const markerData = markersRef.current.find((markerData, index) => {
+      const place = allPlaces[index];
+      return place && place.id === placeId;
+    });
+
+    if (markerData && markerData.marker) {
+      const kakao = (window as any).kakao;
+      const iconSrc = isVisited ? fillMarkIcon : emptyMarkIcon;
+      const markerImage = new kakao.maps.MarkerImage(
+        iconSrc,
+        new kakao.maps.Size(16, 16)
+      );
+      
+      markerData.marker.setImage(markerImage);
+    }
+  }, [kakaoMap, allPlaces]);
 
   const handleKakaoMap = () => {
     if (selectedPlace) {

@@ -12,7 +12,7 @@ interface Place {
 }
 
 interface Stamp {
-  id: number;
+  id: string;
   name: string;
   color: string;
   locations: Place[];
@@ -24,7 +24,8 @@ interface StampModifyModalProps {
   stampBoard?: StampBoard | null; // StampBoard 데이터 추가
   onClose: () => void;
   onSave: (stampName: string, stampColor: string) => void;
-  onDelete: (stampId: number) => void;
+  onDelete: (stampId: string) => void;
+  onToggleVisited?: (bookmarkId: number, visited: boolean) => void; // 방문 상태 토글 함수 추가
 }
 
 const StampModifyModal: React.FC<StampModifyModalProps> = ({
@@ -34,6 +35,7 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
   onClose,
   onSave,
   onDelete,
+  onToggleVisited,
 }) => {
   const [stampName, setStampName] = useState('');
   const [showColorModal, setShowColorModal] = useState(false);
@@ -142,7 +144,7 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
             {/* 장소 선택하기 */}
             <div className="mb-6">
               <label className="block text-xs text-gray-500 mb-3">
-                장소 선택하기
+                장소 선택하기 ({stampBoard?.bookmarks?.length || 0}개)
               </label>
 
               <div className="grid grid-cols-2 gap-2">
@@ -155,13 +157,19 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
                   return (
                     <div
                       key={index}
-                      className={`h-6 rounded-md flex items-center justify-center text-xs font-semibold transition-colors ${
+                      className={`h-6 rounded-md flex items-center justify-center text-xs font-semibold transition-colors cursor-pointer hover:shadow-sm ${
                         hasLocation
                           ? isVisited
                             ? 'bg-[#153641] text-white'
                             : 'bg-[#acacac] text-white'
                           : 'bg-gray-200 text-gray-400'
                       }`}
+                      onClick={() => {
+                        if (hasLocation && onToggleVisited) {
+                          onToggleVisited(bookmark.postId, !isVisited);
+                        }
+                      }}
+                      title={hasLocation ? `${bookmark.title}\n${bookmark.address}` : `장소 ${index + 1}`}
                     >
                       {hasLocation ? bookmark.title : `장소 ${index + 1}`}
                     </div>
