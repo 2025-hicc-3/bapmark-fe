@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { userAPI } from '../../utils/api';
+import { fakeApi } from '../../utils/fakeApi';
 
 interface NicknameChangeModalProps {
   isOpen: boolean;
@@ -66,17 +67,56 @@ const NicknameChangeModal: React.FC<NicknameChangeModalProps> = ({
     setIsLoading(true);
 
     try {
-      // 실제 API 호출
-      const response = await userAPI.updateNickname({
-        nickname: newNickname.trim(),
-      });
+      // 로그인 방식에 따라 API 선택
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
 
-      if (response.data) {
+      let response;
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        fakeApi.setTestMode(true);
+        const result = await fakeApi.updateNickname({
+          nickname: newNickname.trim(),
+        });
+        response = { message: result };
+      } else {
+        // 실제 구글 로그인인 경우 백엔드 API 사용
+        response = await userAPI.updateNickname({
+          nickname: newNickname.trim(),
+        });
+      }
+
+      console.log('API 응답:', response);
+      console.log('응답 타입:', typeof response.data, response.data);
+
+      if (response.data || response.message) {
         // AuthContext 업데이트
         updateUser({ nickname: newNickname.trim() });
-        alert('닉네임이 성공적으로 변경되었습니다!');
+
+        // 성공 메시지 표시
+        let successMessage = '닉네임이 성공적으로 변경되었습니다!';
+
+        if (response.message) {
+          successMessage = response.message;
+          console.log('fakeApi 응답 사용:', successMessage);
+        } else if (response.data && typeof response.data === 'string') {
+          // API 명세서에 따른 문자열 응답 처리
+          successMessage = response.data;
+          console.log('백엔드 API 응답 사용:', successMessage);
+        } else if (response.data) {
+          // 기타 데이터 타입 처리
+          successMessage = String(response.data);
+          console.log('기타 데이터 타입 처리:', successMessage);
+        }
+
+        console.log('최종 성공 메시지:', successMessage);
+        alert(successMessage);
         onClose();
+      } else if (response.error) {
+        // API 에러 응답 처리
+        console.error('API 에러:', response.error);
+        throw new Error(response.error);
       } else {
+        console.error('응답 구조:', response);
         throw new Error('닉네임 변경에 실패했습니다.');
       }
     } catch (error: any) {
@@ -90,6 +130,8 @@ const NicknameChangeModal: React.FC<NicknameChangeModalProps> = ({
         const errorMessage =
           error.response?.data?.message || '닉네임 형식이 올바르지 않습니다.';
         alert(errorMessage);
+      } else if (error.response?.status === 401) {
+        alert('로그인이 필요합니다. 다시 로그인해주세요.');
       } else {
         alert('닉네임 변경에 실패했습니다. 다시 시도해주세요.');
       }

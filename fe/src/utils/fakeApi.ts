@@ -12,8 +12,8 @@ import type { User, UpdateNicknameRequest } from '../types/auth';
 export const fakeUsers: User[] = [
   {
     id: 1,
-    email: 'test1@example.com',
-    nickname: '테스트 사용자1',
+    email: 'user@gmail.com',
+    nickname: '홍대 맛집 탐험가',
   },
 ];
 
@@ -253,7 +253,7 @@ export class FakeAPI {
 
   // 게시글 관련 Fake API
   // GET /posts/allPosts 엔드포인트 시뮬레이션
-  async getPosts(): Promise<Post[]> {
+  async getAllPosts(): Promise<Post[]> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return [...fakePosts];
@@ -264,21 +264,6 @@ export class FakeAPI {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return fakePosts.find((post) => post.id === id) || null;
-  }
-
-  // POST /posts 엔드포인트 시뮬레이션
-  // API 명세서: "게시글 작성 완료" 반환
-  async createPost(postData: CreatePostRequest): Promise<string> {
-    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
-    await this.simulateDelay();
-
-    const newPost: Post = {
-      id: Date.now(), // 현재 시간을 ID로 사용
-      ...postData,
-    };
-
-    fakePosts.push(newPost);
-    return '게시글 작성 완료';
   }
 
   // PUT /posts/{id} 엔드포인트 시뮬레이션

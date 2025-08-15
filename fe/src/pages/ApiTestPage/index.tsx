@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../store/AuthContext';
-import { userAPI } from '../../utils/api';
+import { userAPI, postAPI } from '../../utils/api';
 import HeaderWithoutSearch from '../../components/layout/HeaderWithoutSearch';
 import Navigation from '../../components/layout/Navigation';
 
@@ -49,6 +49,64 @@ const ApiTestPage = () => {
       console.error('API 테스트 오류:', error);
 
       let errorMessage = '❌ API 호출 실패\n\n';
+
+      if (error.response) {
+        // 서버 응답이 있는 경우
+        errorMessage += `상태 코드: ${error.response.status}\n`;
+        errorMessage += `응답 데이터: ${JSON.stringify(error.response.data, null, 2)}\n`;
+      } else if (error.request) {
+        // 요청은 보냈지만 응답이 없는 경우
+        errorMessage += '서버에 연결할 수 없습니다.\n';
+        errorMessage += `요청: ${JSON.stringify(error.request, null, 2)}\n`;
+      } else {
+        // 요청 자체에 문제가 있는 경우
+        errorMessage += `요청 오류: ${error.message}\n`;
+      }
+
+      setTestResult(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testPostsAllPosts = async () => {
+    setIsLoading(true);
+    setTestResult('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setTestResult('❌ 토큰이 없습니다. 먼저 로그인해주세요.');
+        return;
+      }
+
+      setTestResult('🔄 GET /posts/allPosts API 호출 중...\n');
+
+      const response = await postAPI.getAllPosts();
+
+      if (response.data) {
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 성공!\n\n응답 데이터:\n${JSON.stringify(response.data, null, 2)}`
+        );
+      } else if (response.error) {
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ API 에러: ${response.error}\n\n응답:\n${JSON.stringify(response, null, 2)}`
+        );
+      } else {
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ 응답 데이터가 없습니다.\n\n응답:\n${JSON.stringify(response, null, 2)}`
+        );
+      }
+    } catch (error: any) {
+      console.error('게시글 API 테스트 오류:', error);
+
+      let errorMessage = '❌ 게시글 API 호출 실패\n\n';
 
       if (error.response) {
         // 서버 응답이 있는 경우
@@ -192,24 +250,47 @@ const ApiTestPage = () => {
             </h2>
 
             <div className="space-y-4">
-              {/* 기본 테스트 버튼 */}
-              <div>
-                <button
-                  onClick={testUsersMe}
-                  disabled={isLoading || !isLoggedIn}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                    isLoading || !isLoggedIn
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  {isLoading
-                    ? '테스트 중...'
-                    : 'GET /users/me 테스트 (현재 토큰)'}
-                </button>
-                <p className="text-xs text-gray-500 mt-1">
-                  현재 로그인된 사용자의 토큰으로 API를 테스트합니다.
-                </p>
+              {/* 기본 테스트 버튼들 */}
+              <div className="space-y-3">
+                <div>
+                  <button
+                    onClick={testUsersMe}
+                    disabled={isLoading || !isLoggedIn}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                      isLoading || !isLoggedIn
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isLoading
+                      ? '테스트 중...'
+                      : 'GET /users/me 테스트 (현재 토큰)'}
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    현재 로그인된 사용자의 토큰으로 사용자 정보 API를
+                    테스트합니다.
+                  </p>
+                </div>
+
+                <div>
+                  <button
+                    onClick={testPostsAllPosts}
+                    disabled={isLoading || !isLoggedIn}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                      isLoading || !isLoggedIn
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
+                  >
+                    {isLoading
+                      ? '테스트 중...'
+                      : 'GET /posts/allPosts 테스트 (현재 토큰)'}
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    현재 로그인된 사용자의 토큰으로 전체 게시글 목록 API를
+                    테스트합니다.
+                  </p>
+                </div>
               </div>
 
               {/* 커스텀 토큰 테스트 */}
@@ -272,6 +353,9 @@ const ApiTestPage = () => {
             <div className="space-y-2 text-sm text-blue-800">
               <div>
                 <strong>GET /users/me</strong> - 현재 사용자 정보 조회
+              </div>
+              <div>
+                <strong>GET /posts/allPosts</strong> - 전체 게시글 목록 조회
               </div>
               <div>
                 <strong>Headers:</strong> Authorization: Bearer [토큰]

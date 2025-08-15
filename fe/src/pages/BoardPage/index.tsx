@@ -30,10 +30,11 @@ const BoardPage = () => {
   // 장소 검색 결과 처리
   const handlePlaceSelect = (place: SearchResult) => {
     // 검색된 장소와 관련된 게시물 필터링
-    const filtered = posts.filter((post) =>
-      post.title.toLowerCase().includes(place.name.toLowerCase()) ||
-      post.content.toLowerCase().includes(place.name.toLowerCase()) ||
-      post.address.toLowerCase().includes(place.name.toLowerCase())
+    const filtered = posts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(place.name.toLowerCase()) ||
+        post.content.toLowerCase().includes(place.name.toLowerCase()) ||
+        post.address.toLowerCase().includes(place.name.toLowerCase())
     );
     setFilteredPosts(filtered);
   };
@@ -62,7 +63,9 @@ const BoardPage = () => {
         <main className="main-content bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">데이터 로드 실패</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">
+              데이터 로드 실패
+            </h1>
             <p className="text-gray-600 mb-4">{error}</p>
             <button
               onClick={() => refreshPostData()}

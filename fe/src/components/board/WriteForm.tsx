@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { CreatePostRequest } from '../../types/api';
+import type { SearchResult } from '../../types/search';
+import { searchPlaces } from '../../services/kakaoSearch';
 
 interface WriteFormProps {
   onClose: () => void;
@@ -12,6 +14,64 @@ const WriteForm: React.FC<WriteFormProps> = ({ onClose, onSubmit }) => {
   const [address, setAddress] = useState('');
   const [latitude, setLatitude] = useState<number>(0);
   const [longitude, setLongitude] = useState<number>(0);
+
+  // 장소검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
+
+  // 장소검색 함수
+  const handleSearchInputChange = (query: string) => {
+    setSearchQuery(query);
+    setShowSearchResults(true);
+
+    // 디바운싱: 입력이 멈춘 후 500ms 뒤에 검색 실행
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (query.trim()) {
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          setIsSearching(true);
+          const results = await searchPlaces(query);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('장소 검색 오류:', error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 500);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  // 장소 선택 함수
+  const handlePlaceSelect = (place: SearchResult) => {
+    setAddress(place.name); // 장소명을 address에 저장
+    setLatitude(place.lat);
+    setLongitude(place.lng);
+    setSearchQuery(place.name);
+    setShowSearchResults(false);
+  };
+
+  // 검색 결과 외부 클릭 시 숨기기
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSearchResults(false);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,43 +107,72 @@ const WriteForm: React.FC<WriteFormProps> = ({ onClose, onSubmit }) => {
         />
       </div>
 
-      {/* 주소 등록 */}
-      <div className="space-y-2 mb-4">
-        <label className="text-gray-600 text-xs font-normal">주소등록</label>
+      {/* 장소검색 */}
+      <div className="space-y-2 mb-4 relative">
+        <label className="text-gray-600 text-xs font-normal">장소검색</label>
         <input
           type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="주소를 입력하세요"
+          value={searchQuery}
+          onChange={(e) => handleSearchInputChange(e.target.value)}
+          placeholder="장소명을 검색하세요"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
+
+        {/* 검색 결과 */}
+        {showSearchResults && (
+          <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50 max-h-80 overflow-y-auto">
+            {isSearching ? (
+              <div className="p-4 text-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-sm text-gray-600 mt-2">검색 중...</p>
+              </div>
+            ) : searchResults.length > 0 ? (
+              searchResults.map((place) => (
+                <div
+                  key={place.id}
+                  className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  onClick={() => handlePlaceSelect(place)}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 text-sm truncate">
+                        {place.name}
+                      </h4>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {place.roadAddress || place.address}
+                      </p>
+                      {place.category && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          {place.category}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : searchQuery.trim() && !isSearching ? (
+              <div className="p-4 text-center text-gray-500">
+                검색 결과가 없습니다.
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
-      {/* 위도/경도 입력 (개발용, 실제로는 지도에서 선택하도록 수정 필요) */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <div className="space-y-2">
-          <label className="text-gray-600 text-xs font-normal">위도</label>
-          <input
-            type="number"
-            step="any"
-            value={latitude}
-            onChange={(e) => setLatitude(parseFloat(e.target.value) || 0)}
-            placeholder="위도"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      {/* 선택된 장소 정보 */}
+      {address && (
+        <div className="space-y-2 mb-4">
+          <label className="text-gray-600 text-xs font-normal">
+            선택된 장소
+          </label>
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="text-sm font-medium text-gray-900">{address}</div>
+            <div className="text-xs text-gray-600 mt-1">
+              위도: {latitude.toFixed(6)}, 경도: {longitude.toFixed(6)}
+            </div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-gray-600 text-xs font-normal">경도</label>
-          <input
-            type="number"
-            step="any"
-            value={longitude}
-            onChange={(e) => setLongitude(parseFloat(e.target.value) || 0)}
-            placeholder="경도"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      </div>
+      )}
 
       {/* 내용 */}
       <div className="space-y-2 flex-1 mb-4">

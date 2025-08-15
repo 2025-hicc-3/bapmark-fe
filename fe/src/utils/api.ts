@@ -54,11 +54,24 @@ class ApiClient {
       return { error: errorData.message || `HTTP ${response.status} 오류` };
     }
 
-    try {
-      const data = await response.json();
-      return { data };
-    } catch {
-      return { error: '응답을 파싱할 수 없습니다.' };
+    // Content-Type 확인하여 JSON인지 문자열인지 판단
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const data = await response.json();
+        return { data };
+      } catch {
+        return { error: 'JSON 응답을 파싱할 수 없습니다.' };
+      }
+    } else {
+      // JSON이 아닌 경우 (문자열 등) 텍스트로 읽기
+      try {
+        const text = await response.text();
+        return { data: text };
+      } catch {
+        return { error: '응답을 읽을 수 없습니다.' };
+      }
     }
   }
 
