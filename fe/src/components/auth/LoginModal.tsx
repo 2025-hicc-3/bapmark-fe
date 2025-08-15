@@ -43,8 +43,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 throw new Error('인증 실패');
               }
 
-              // 실제 API 응답에서 사용자 정보를 받아와서 로그인
-              login(data.accessToken, data.user);
+              // 실제 API 응답에서 토큰만으로 로그인 (사용자 정보는 fetchUserInfo에서 가져옴)
+              await login(data.accessToken);
               setIsLoading(false);
               onClose();
             } catch {
@@ -76,8 +76,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       // Fake API를 통한 테스트 로그인
       const testResponse = await fakeApi.testLogin();
 
-      // AuthContext를 통해 로그인 (실제 로그인과 동일한 방식)
-      login(testResponse.accessToken, testResponse.user);
+      // 테스트 로그인 플래그 설정
+      localStorage.setItem('isTestLogin', 'true');
+      
+      // AuthContext를 통해 로그인 (사용자 정보는 fetchUserInfo에서 가져옴)
+      await login(testResponse.accessToken);
 
       setIsLoading(false);
       alert('테스트 로그인 완료!');

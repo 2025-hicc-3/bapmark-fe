@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   getToken: () => string | null;
   updateUser: (userData: Partial<User>) => void;
+  fetchUserInfo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const login = (token: string, userData?: User) => {
+  const login = async (token: string, userData?: User) => {
     localStorage.setItem('accessToken', token);
 
     if (userData) {
@@ -56,6 +57,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     setIsLoggedIn(true);
+
+    // 로그인 후 사용자 정보 가져오기
+    try {
+      await fetchUserInfo();
+    } catch (error) {
+      console.error('로그인 후 사용자 정보 조회 실패:', error);
+    }
   };
 
   const logout = () => {
@@ -77,6 +85,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // 사용자 정보 가져오기
+  const fetchUserInfo = async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      // 로그인 방식에 따라 API 선택
+      const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
+      
+      if (isTestLogin) {
+        // 테스트 로그인인 경우 fakeApi 사용
+        const { fakeApi } = await import('../utils/fakeApi');
+        fakeApi.setTestMode(true);
+        const userData = await fakeApi.getUserInfo();
+        setUser(userData);
+        localStorage.setItem('userData', JSON.stringify(userData));
+      } else {
+        // 실제 구글 로그인인 경우 백엔드 API 사용
+        const { userAPI } = await import('../utils/api');
+        const response = await userAPI.getMe();
+        if (response.data) {
+          setUser(response.data);
+          localStorage.setItem('userData', JSON.stringify(response.data));
+        }
+      }
+    } catch (error) {
+      console.error('사용자 정보 조회 실패:', error);
+      // 에러 발생 시 로그아웃 처리
+      logout();
+    }
+  };
+
   const value: AuthContextType = {
     isLoggedIn,
     user,
@@ -84,6 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     getToken,
     updateUser,
+    fetchUserInfo,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

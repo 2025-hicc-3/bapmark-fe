@@ -7,6 +7,7 @@ import MapPage from './pages/MapPage';
 import MapTestPage from './pages/MapTestPage';
 import BoardPage from './pages/BoardPage';
 import BoardDetailPage from './pages/BoardDetailPage';
+import ApiTestPage from './pages/ApiTestPage';
 
 function App() {
   return (
@@ -14,13 +15,14 @@ function App() {
       <StampProvider>
         <PostProvider>
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<MapPage />} />
-              <Route path="/map" element={<MapPage />} />
-              <Route path="/board" element={<BoardPage />} />
-              <Route path="/board/:id" element={<BoardDetailPage />} />
-              <Route path="/maptest" element={<MapTestPage />} />
-            </Routes>
+                                    <Routes>
+                          <Route path="/" element={<MapPage />} />
+                          <Route path="/map" element={<MapPage />} />
+                          <Route path="/board" element={<BoardPage />} />
+                          <Route path="/board/:id" element={<BoardDetailPage />} />
+                          <Route path="/maptest" element={<MapTestPage />} />
+                          <Route path="/apitest" element={<ApiTestPage />} />
+                        </Routes>
           </BrowserRouter>
         </PostProvider>
       </StampProvider>
