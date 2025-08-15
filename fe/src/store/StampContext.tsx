@@ -25,6 +25,8 @@ interface StampContextType {
     updates: Partial<StampBoard>
   ) => Promise<boolean>;
   deleteStampBoard: (boardId: number) => Promise<boolean>;
+  // 특정 장소가 어떤 스탬프북에 포함되어 있는지 확인하는 함수 추가
+  getStampBoardsForPlace: (placeName: string, latitude: number, longitude: number) => string[];
 }
 
 const StampContext = createContext<StampContextType | undefined>(undefined);
@@ -56,15 +58,31 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
       // fakeApi 테스트 모드 활성화
       fakeApi.setTestMode(true);
 
-      // fakeApi에서 데이터 가져오기
-      const [stampBoards, bookmarks] = await Promise.all([
-        fakeApi.getStampBoards(),
-        fakeApi.getBookmarks(),
-      ]);
+      // fakeApi에서 스탬프보드 목록 가져오기
+      const stampBoards = await fakeApi.getStampBoards();
+      
+      // 각 스탬프보드의 상세 정보 가져오기
+      const stampBoardsWithBookmarks = await Promise.all(
+        stampBoards.map(async (board) => {
+          try {
+            const detailedBoard = await fakeApi.getStampBoard(board.id);
+            return {
+              ...board,
+              bookmarks: detailedBoard?.bookmarks || [],
+            };
+          } catch (error) {
+            console.error(`fakeApi 스탬프보드 ${board.id} 상세 조회 실패:`, error);
+            return { ...board, bookmarks: [] };
+          }
+        })
+      );
+
+      // 모든 북마크를 하나의 배열로 추출
+      const allBookmarks = extractAllBookmarks(stampBoardsWithBookmarks);
 
       return {
-        stampBoards,
-        bookmarks,
+        stampBoards: stampBoardsWithBookmarks,
+        bookmarks: allBookmarks,
       };
     } catch (error) {
       console.error('테스트 데이터 가져오기 실패:', error);
@@ -99,15 +117,25 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
 
       const stampBoards = stampBoardsResponse.data || [];
 
-      // 각 스탬프보드의 북마크 정보 가져오기
+      // 각 스탬프보드의 상세 정보 가져오기 (/stampboards/{id} 엔드포인트 사용)
       const stampBoardsWithBookmarks = await Promise.all(
         stampBoards.map(async (board) => {
           try {
-            // 스탬프보드에 속한 북마크들 가져오기 (API 명세에 따라 조정 필요)
-            // 현재는 board.bookmarks가 이미 포함되어 있다고 가정
-            return board;
+            // 각 스탬프보드의 상세 정보 조회
+            const detailResponse = await stampBoardAPI.getStampBoard(board.id.toString());
+            if (detailResponse.error) {
+              console.error(`스탬프보드 ${board.id} 상세 조회 실패:`, detailResponse.error);
+              return { ...board, bookmarks: [] };
+            }
+            
+            // 상세 정보에서 북마크 배열 추출
+            const detailedBoard = detailResponse.data;
+            return {
+              ...board,
+              bookmarks: detailedBoard?.bookmarks || [],
+            };
           } catch (error) {
-            console.error(`스탬프보드 ${board.id} 북마크 조회 실패:`, error);
+            console.error(`스탬프보드 ${board.id} 상세 조회 실패:`, error);
             return { ...board, bookmarks: [] };
           }
         })
@@ -347,6 +375,47 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
     refreshStampData();
   }, [isLoggedIn]);
 
+  // 특정 장소가 어떤 스탬프북에 포함되어 있는지 확인하는 함수
+  const getStampBoardsForPlace = (placeName: string, latitude: number, longitude: number): string[] => {
+    const stampBoardIds: string[] = [];
+    
+    console.log('getStampBoardsForPlace 호출:', { placeName, latitude, longitude });
+    console.log('현재 stampData.stampBoards:', stampData.stampBoards);
+    
+    stampData.stampBoards.forEach((board) => {
+      console.log(`스탬프보드 ${board.id} (${board.title}) 검사:`, board.bookmarks);
+      
+      if (board.bookmarks && board.bookmarks.length > 0) {
+        const hasPlace = board.bookmarks.some((bookmark) => {
+          // 장소명과 좌표로 매칭 (약간의 오차 허용)
+          const nameMatch = bookmark.title === placeName;
+          const latMatch = Math.abs(bookmark.latitude - latitude) < 0.0001; // 약 11m 오차 허용
+          const lngMatch = Math.abs(bookmark.longitude - longitude) < 0.0001;
+          
+          console.log(`북마크 "${bookmark.title}" 매칭 결과:`, {
+            nameMatch,
+            latMatch,
+            lngMatch,
+            bookmarkLat: bookmark.latitude,
+            bookmarkLng: bookmark.longitude,
+            inputLat: latitude,
+            inputLng: longitude
+          });
+          
+          return nameMatch && latMatch && lngMatch;
+        });
+        
+        if (hasPlace) {
+          stampBoardIds.push(board.id.toString());
+          console.log(`장소 "${placeName}"이 스탬프보드 "${board.title}"에 포함됨`);
+        }
+      }
+    });
+    
+    console.log(`장소 "${placeName}"이 포함된 스탬프보드 ID들:`, stampBoardIds);
+    return stampBoardIds;
+  };
+
   const value: StampContextType = {
     stampData,
     isLoading,
@@ -358,6 +427,7 @@ export const StampProvider: React.FC<StampProviderProps> = ({ children }) => {
     createStampBoard,
     updateStampBoard,
     deleteStampBoard,
+    getStampBoardsForPlace,
   };
 
   return (

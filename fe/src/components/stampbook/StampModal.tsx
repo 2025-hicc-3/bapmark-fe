@@ -17,7 +17,7 @@ interface Place {
 }
 
 interface Stamp {
-  id: number;
+  id: string;
   name: string;
   color: string;
   locations: Place[];
@@ -49,19 +49,23 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
     useStamp();
 
   // StampContext 데이터를 기존 Stamp 형식으로 변환
-  const stamps: Stamp[] = stampData.stampBoards.map((board) => ({
-    id: board.id,
-    name: board.title,
-    color: board.color,
-    locations: (board.bookmarks || []).map((bookmark) => ({
-      id: bookmark.postId, // bookmark.id 대신 postId 사용
-      name: bookmark.title, // bookmark.placeName 대신 title 사용
-      lat: bookmark.latitude,
-      lng: bookmark.longitude,
-      isVisited: bookmark.visited,
-      address: bookmark.address,
-    })),
-  }));
+  const stamps: Stamp[] = stampData.stampBoards.map((board) => {
+    console.log(`스탬프보드 ${board.id} (${board.title}) 변환:`, board.bookmarks);
+    
+    return {
+      id: board.id.toString(), // number를 string으로 변환
+      name: board.title,
+      color: board.color,
+      locations: (board.bookmarks || []).map((bookmark) => ({
+        id: bookmark.postId.toString(), // number를 string으로 변환
+        name: bookmark.title, // bookmark.placeName 대신 title 사용
+        lat: bookmark.latitude,
+        lng: bookmark.longitude,
+        isVisited: bookmark.visited,
+        address: bookmark.address,
+      })),
+    };
+  });
 
   const handleStampClick = (stamp: Stamp) => {
     setSelectedStampBook(stamp);
@@ -198,19 +202,25 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
 
   // 지도 화면이 표시되는 경우
   if (showMap && selectedStampBook) {
-    // Stamp를 StampBook으로 변환
+    // Stamp를 StampBook으로 변환 (Place 객체의 id를 string으로 변환)
     const stampBookForMap = {
       id: selectedStampBook.id,
       name: selectedStampBook.name,
       color: selectedStampBook.color,
-      places: selectedStampBook.locations || [],
+      places: (selectedStampBook.locations || []).map(location => ({
+        ...location,
+        id: location.id.toString(), // string으로 변환
+      })),
     };
 
     const availableStampBooksForMap = stamps.map((stamp) => ({
       id: stamp.id,
       name: stamp.name,
       color: stamp.color,
-      places: stamp.locations || [],
+      places: (stamp.locations || []).map(location => ({
+        ...location,
+        id: location.id.toString(), // string으로 변환
+      })),
     }));
 
     return (

@@ -50,7 +50,8 @@ const StampMap: React.FC<StampMapProps> = ({
   const apiKey = import.meta.env.VITE_KAKAO_MAP_API_KEY;
 
   // StampContext에서 데이터 가져오기
-  const { stampData, updateBookmarkVisited } = useStamp();
+  const { stampData, updateBookmarkVisited, getStampBoardsForPlace } =
+    useStamp();
 
   // 북마크 저장 핸들러
   const handleBookmarkSave = async (place: Place) => {
@@ -248,7 +249,11 @@ const StampMap: React.FC<StampMapProps> = ({
               const enhancedPlace: Place = {
                 ...place,
                 isBookmarked: true, // 스탬프북에 있는 장소는 북마크된 것으로 간주
-                currentStampBoards: [stampBook.id], // 현재 스탬프북에 속해있음
+                currentStampBoards: getStampBoardsForPlace(
+                  place.name,
+                  place.lat,
+                  place.lng
+                ), // 실제 API 데이터 사용
                 address: place.address || '주소 정보 없음',
                 sourceTitle: undefined,
                 sourceContent: undefined,
@@ -468,9 +473,10 @@ const StampMap: React.FC<StampMapProps> = ({
         onAddToStampBoard={handleAddToStampBoard}
         onRemoveFromStampBoard={handleRemoveFromStampBoard}
         stampBoards={stampData.stampBoards.map((board) => ({
-          id: board.id,
+          id: board.id.toString(), // number를 string으로 변환
           title: board.title,
           color: board.color,
+          bookmarks: board.bookmarks || [], // 북마크 정보 추가
         }))}
       />
     </div>

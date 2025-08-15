@@ -34,7 +34,7 @@ const MapPage = () => {
   const [isInitializing, setIsInitializing] = useState(false);
 
   // StampContext에서 데이터 가져오기
-  const { stampData, isLoading: stampLoading, error: stampError } = useStamp();
+  const { stampData, isLoading: stampLoading, error: stampError, getStampBoardsForPlace, refreshStampData } = useStamp();
 
   // 컴포넌트 마운트 시 로그
   useEffect(() => {
@@ -47,22 +47,37 @@ const MapPage = () => {
   }, []);
 
   // 모든 장소를 하나의 배열로 변환
-  const allPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => ({
-    id: bookmark.postId.toString(),
-    name: bookmark.title,
-    lat: bookmark.latitude,
-    lng: bookmark.longitude,
-    isVisited: bookmark.visited,
-    address: bookmark.address,
-    sourceTitle: undefined,
-    sourceContent: undefined,
-    isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
-    currentStampBoards: [], // TODO: 실제 스탬프북 정보를 가져와서 설정
-  }));
+  const allPlaces: PlaceDetail[] = stampData.bookmarks.map((bookmark) => {
+    // 해당 장소가 어떤 스탬프북에 포함되어 있는지 확인
+    const currentStampBoards = getStampBoardsForPlace(
+      bookmark.title,
+      bookmark.latitude,
+      bookmark.longitude
+    );
+    
+    return {
+      id: bookmark.postId.toString(),
+      name: bookmark.title,
+      lat: bookmark.latitude,
+      lng: bookmark.longitude,
+      isVisited: bookmark.visited,
+      address: bookmark.address,
+      sourceTitle: undefined,
+      sourceContent: undefined,
+      isBookmarked: true, // 북마크된 장소는 북마크 상태를 true로 설정
+      currentStampBoards, // 실제 스탬프북 정보 설정
+    };
+  });
 
   // allPlaces 변경 시 로그
   useEffect(() => {
     console.log('allPlaces 변경됨:', allPlaces.length);
+    // 각 장소의 스탬프북 정보 로깅
+    allPlaces.forEach((place) => {
+      if (place.currentStampBoards && place.currentStampBoards.length > 0) {
+        console.log(`장소 "${place.name}"이 포함된 스탬프북:`, place.currentStampBoards);
+      }
+    });
   }, [allPlaces]);
 
   const handlePlaceClick = useCallback((place: PlaceDetail) => {
@@ -260,9 +275,9 @@ const MapPage = () => {
     }
   }, []);
 
-  // 스탬프북에 장소 추가 처리
+    // 스탬프북에 장소 추가 처리
   const handleAddToStampBoard = useCallback(
-    async (place: PlaceDetail, stampBoardId: number) => {
+    async (place: PlaceDetail, stampBoardId: string) => {
       try {
         console.log(
           '스탬프북에 장소 추가 시작:',
@@ -271,47 +286,57 @@ const MapPage = () => {
           stampBoardId
         );
 
-        // API 호출하여 스탬프북에 장소 추가
-        const response = await fetch(
-          `/api/stampboards/${stampBoardId}/bookmarks`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              placeName: place.name,
-              address: place.address || '',
-              latitude: place.lat,
-              longitude: place.lng,
-            }),
-          }
-        );
+        // 로그인 방식에 따라 API 선택
+        const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
 
-        if (response.ok) {
-          console.log('스탬프북에 장소 추가 성공');
-
-          // 성공 메시지 표시
-          alert('선택한 스탬프북에 장소가 추가되었습니다!');
-
-          // 모달 닫기
-          setShowPlaceDetail(false);
-          setSelectedPlace(null);
+        if (isTestLogin) {
+          // 테스트 로그인인 경우 fakeApi 사용
+          const { fakeApi } = await import('../../utils/fakeApi');
+          fakeApi.setTestMode(true);
+          
+          // fakeApi에서 스탬프보드에 북마크 추가
+          await fakeApi.addBookmarkToStampBoard(parseInt(stampBoardId), parseInt(place.id));
+          console.log('테스트 로그인: fakeApi로 스탬프보드에 장소 추가');
         } else {
-          console.error('스탬프북에 장소 추가 실패:', response.status);
-          alert('스탬프북에 장소 추가에 실패했습니다.');
+          // 실제 구글 로그인인 경우 백엔드 API 사용
+          const response = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/stampboards/${stampBoardId}/bookmark`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+              },
+              body: JSON.stringify(parseInt(place.id)),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          console.log('구글 로그인: 백엔드 API로 스탬프보드에 장소 추가');
         }
+
+        // 성공 메시지 표시
+        alert('선택한 스탬프북에 장소가 추가되었습니다!');
+
+        // 스탬프 데이터 새로고침
+        refreshStampData();
+
+        // 모달 닫기
+        setShowPlaceDetail(false);
+        setSelectedPlace(null);
       } catch (error) {
         console.error('스탬프북에 장소 추가 오류:', error);
         alert('스탬프북에 장소 추가 중 오류가 발생했습니다.');
       }
     },
-    []
+    [refreshStampData]
   );
 
   // 스탬프북에서 장소 제거 처리
   const handleRemoveFromStampBoard = useCallback(
-    async (place: PlaceDetail, stampBoardId: number) => {
+    async (place: PlaceDetail, stampBoardId: string) => {
       try {
         console.log(
           '스탬프북에서 장소 제거 시작:',
@@ -320,33 +345,52 @@ const MapPage = () => {
           stampBoardId
         );
 
-        // API 호출하여 스탬프북에서 장소 제거
-        const response = await fetch(
-          `/api/stampboards/${stampBoardId}/bookmarks/${place.id}`,
-          {
-            method: 'DELETE',
-          }
-        );
+        // 로그인 방식에 따라 API 선택
+        const isTestLogin = localStorage.getItem('isTestLogin') === 'true';
 
-        if (response.ok) {
-          console.log('스탬프북에서 장소 제거 성공');
-
-          // 성공 메시지 표시
-          alert('선택한 스탬프북에서 장소가 제거되었습니다!');
-
-          // 모달 닫기
-          setShowPlaceDetail(false);
-          setSelectedPlace(null);
+        if (isTestLogin) {
+          // 테스트 로그인인 경우 fakeApi 사용
+          const { fakeApi } = await import('../../utils/fakeApi');
+          fakeApi.setTestMode(true);
+          
+          // fakeApi에서 스탬프보드에서 북마크 제거
+          await fakeApi.removeBookmarkFromStampBoard(parseInt(stampBoardId), parseInt(place.id));
+          console.log('테스트 로그인: fakeApi로 스탬프보드에서 장소 제거');
         } else {
-          console.error('스탬프북에서 장소 제거 실패:', response.status);
-          alert('스탬프북에서 장소 제거에 실패했습니다.');
+          // 실제 구글 로그인인 경우 백엔드 API 사용
+          const response = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/stampboards/${stampBoardId}/bookmark`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+              },
+              body: JSON.stringify(parseInt(place.id)),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          console.log('구글 로그인: 백엔드 API로 스탬프보드에서 장소 제거');
         }
+
+        // 성공 메시지 표시
+        alert('선택한 스탬프북에서 장소가 제거되었습니다!');
+
+        // 스탬프 데이터 새로고침
+        refreshStampData();
+
+        // 모달 닫기
+        setShowPlaceDetail(false);
+        setSelectedPlace(null);
       } catch (error) {
         console.error('스탬프북에서 장소 제거 오류:', error);
         alert('스탬프북에서 장소 제거 중 오류가 발생했습니다.');
       }
     },
-    []
+    [refreshStampData]
   );
 
   const loadKakaoMapSDK = () => {
@@ -720,7 +764,12 @@ const MapPage = () => {
           onVisitToggle={handleVisitToggle}
           onAddToStampBoard={handleAddToStampBoard}
           onRemoveFromStampBoard={handleRemoveFromStampBoard}
-          stampBoards={stampData.stampBoards}
+          stampBoards={stampData.stampBoards.map((board) => ({
+            id: board.id.toString(), // number를 string으로 변환
+            title: board.title,
+            color: board.color,
+            bookmarks: board.bookmarks || [], // 북마크 정보 추가
+          }))}
         />
       )}
     </div>

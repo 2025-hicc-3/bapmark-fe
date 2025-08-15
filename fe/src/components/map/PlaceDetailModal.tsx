@@ -19,9 +19,17 @@ interface Place {
 }
 
 interface StampBoard {
-  id: number;
+  id: string;
   title: string;
   color: string;
+  bookmarks?: Array<{
+    postId: number;
+    title: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    visited: boolean;
+  }>;
 }
 
 interface PlaceDetailModalProps {
@@ -33,8 +41,8 @@ interface PlaceDetailModalProps {
   onBookmarkSave?: (place: Place) => void; // 북마크 저장 콜백 추가
   onBookmarkToggle?: (place: Place) => void; // 북마크 토글 콜백 추가
   onVisitToggle?: (place: Place) => void; // 방문 상태 토글 콜백 추가
-  onAddToStampBoard?: (place: Place, stampBoardId: number) => void; // 스탬프북에 추가 콜백
-  onRemoveFromStampBoard?: (place: Place, stampBoardId: number) => void; // 스탬프북에서 제거 콜백
+  onAddToStampBoard?: (place: Place, stampBoardId: string) => void; // 스탬프북에 추가 콜백
+  onRemoveFromStampBoard?: (place: Place, stampBoardId: string) => void; // 스탬프북에서 제거 콜백
   stampBoards?: StampBoard[]; // 사용자의 스탬프북 목록
 }
 
@@ -108,9 +116,20 @@ const PlaceDetailModal: React.FC<PlaceDetailModalProps> = ({
   };
 
   // 현재 장소가 들어가있는 스탬프북 목록
-  const currentStampBoards = stampBoards.filter((board) =>
-    place?.currentStampBoards?.includes(board.id)
-  );
+  const currentStampBoards = stampBoards.filter((board) => {
+    // place.currentStampBoards에 board.id가 포함되어 있는지 확인
+    const isInCurrentStampBoards = place?.currentStampBoards?.includes(board.id);
+    
+    // 또는 board.bookmarks에 해당 장소가 포함되어 있는지 확인
+    const isInBookmarks = board.bookmarks?.some((bookmark) => {
+      const nameMatch = bookmark.title === place?.name;
+      const latMatch = Math.abs(bookmark.latitude - (place?.lat || 0)) < 0.0001;
+      const lngMatch = Math.abs(bookmark.longitude - (place?.lng || 0)) < 0.0001;
+      return nameMatch && latMatch && lngMatch;
+    });
+    
+    return isInCurrentStampBoards || isInBookmarks;
+  });
 
   if (!isOpen || !place) return null;
 
