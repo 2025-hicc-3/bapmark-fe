@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import colorIcon from '../../assets/icons/color.svg';
 import ColorSelectModal from './ColorSelectModal';
+import type { StampBoard } from '../../types/api';
 
 interface Place {
   id: string;
@@ -11,7 +12,7 @@ interface Place {
 }
 
 interface Stamp {
-  id: string;
+  id: number;
   name: string;
   color: string;
   locations: Place[];
@@ -20,14 +21,16 @@ interface Stamp {
 interface StampModifyModalProps {
   isOpen: boolean;
   stamp: Stamp | null;
+  stampBoard?: StampBoard | null; // StampBoard 데이터 추가
   onClose: () => void;
   onSave: (stampName: string, stampColor: string) => void;
-  onDelete: (stampId: string) => void;
+  onDelete: (stampId: number) => void;
 }
 
 const StampModifyModal: React.FC<StampModifyModalProps> = ({
   isOpen,
   stamp,
+  stampBoard,
   onClose,
   onSave,
   onDelete,
@@ -141,11 +144,13 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
               <label className="block text-xs text-gray-500 mb-3">
                 장소 선택하기
               </label>
+
               <div className="grid grid-cols-2 gap-2">
                 {Array.from({ length: 10 }, (_, index) => {
-                  const location = stamp.locations[index];
-                  const isVisited = location?.isVisited || false;
-                  const hasLocation = !!location;
+                  // stampBoard의 bookmarks 데이터 사용
+                  const bookmark = stampBoard?.bookmarks?.[index];
+                  const isVisited = bookmark?.visited || false;
+                  const hasLocation = !!bookmark;
 
                   return (
                     <div
@@ -158,7 +163,7 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
                           : 'bg-gray-200 text-gray-400'
                       }`}
                     >
-                      {hasLocation ? location.name : `장소 ${index + 1}`}
+                      {hasLocation ? bookmark.title : `장소 ${index + 1}`}
                     </div>
                   );
                 })}
@@ -175,7 +180,7 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
             >
               저장하기
             </button>
-            
+
             {/* 삭제 버튼 */}
             <button
               onClick={handleDeleteClick}
@@ -205,10 +210,7 @@ const StampModifyModal: React.FC<StampModifyModalProps> = ({
               스탬프북 삭제
             </h3>
             <p className="text-center text-gray-600 mb-6">
-              <span
-                className="font-medium"
-                style={{ color: stamp.color }}
-              >
+              <span className="font-medium" style={{ color: stamp.color }}>
                 {stamp.name}
               </span>
               스탬프북을 삭제하시겠습니까?

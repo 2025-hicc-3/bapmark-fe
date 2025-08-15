@@ -1,113 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../../components/layout/Header';
 import Navigation from '../../components/layout/Navigation';
 import PostCard from '../../components/board/PostCard';
 import FloatingWriteButton from '../../components/board/FloatingWriteButton';
 import WriteModal from '../../components/board/WriteModal';
-import type { Post } from '../../types/api';
+import { usePost } from '../../store/PostContext';
+import type { SearchResult } from '../../types/search';
 
-// 임시 게시물 데이터 (API 명세서에 맞게 수정)
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    title: '카미야가 어쩌구저쩌구',
-    content: '내용은 이렇고 저렇고',
-    address: '카미야',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '1',
-      email: 'user1@example.com',
-    },
-  },
-  {
-    id: '2',
-    title: '한신포차 맛있어요',
-    content: '정말 맛있는 포차였어요',
-    address: '한신포차',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '2',
-      email: 'user2@example.com',
-    },
-  },
-  {
-    id: '3',
-    title: '가미우동 추천',
-    content: '우동이 정말 맛있어요',
-    address: '가미우동',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '3',
-      email: 'user3@example.com',
-    },
-  },
-  {
-    id: '4',
-    title: '맛집 발견했어요',
-    content: '이곳 꼭 가보세요',
-    address: '맛집',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '4',
-      email: 'user4@example.com',
-    },
-  },
-  {
-    id: '5',
-    title: '오늘 점심 메뉴',
-    content: '오늘 점심 뭐 먹을까요',
-    address: '점심',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '5',
-      email: 'user5@example.com',
-    },
-  },
-  {
-    id: '6',
-    title: '저녁 맛집 추천',
-    content: '저녁에 먹기 좋은 곳',
-    address: '저녁',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '6',
-      email: 'user6@example.com',
-    },
-  },
-  {
-    id: '7',
-    title: '주말 맛집 탐방',
-    content: '주말에 가볼만한 곳',
-    address: '주말',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '7',
-      email: 'user7@example.com',
-    },
-  },
-  {
-    id: '8',
-    title: '디저트 맛집',
-    content: '달콤한 디저트 맛집',
-    address: '디저트',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '8',
-      email: 'user8@example.com',
-    },
-  },
-];
+// mockPosts 데이터는 이제 PostContext에서 관리됩니다
 
 const BoardPage = () => {
-  const [posts] = useState(mockPosts);
+  const { posts, isLoading, error, refreshPostData } = usePost();
+  const [filteredPosts, setFilteredPosts] = useState(posts);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleWriteButtonClick = () => {
@@ -118,19 +22,80 @@ const BoardPage = () => {
     setIsModalOpen(false);
   };
 
+  // posts가 변경될 때 filteredPosts 업데이트
+  useEffect(() => {
+    setFilteredPosts(posts);
+  }, [posts]);
+
+  // 장소 검색 결과 처리
+  const handlePlaceSelect = (place: SearchResult) => {
+    // 검색된 장소와 관련된 게시물 필터링
+    const filtered = posts.filter((post) =>
+      post.title.toLowerCase().includes(place.name.toLowerCase()) ||
+      post.content.toLowerCase().includes(place.name.toLowerCase()) ||
+      post.address.toLowerCase().includes(place.name.toLowerCase())
+    );
+    setFilteredPosts(filtered);
+  };
+
+  // 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <div className="h-screen flex flex-col">
+        <Header showSearch={true} onPlaceSelect={handlePlaceSelect} />
+        <main className="main-content bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">게시글을 불러오는 중...</p>
+          </div>
+        </main>
+        <Navigation />
+      </div>
+    );
+  }
+
+  // 에러 상태 표시
+  if (error) {
+    return (
+      <div className="h-screen flex flex-col">
+        <Header showSearch={true} onPlaceSelect={handlePlaceSelect} />
+        <main className="main-content bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">데이터 로드 실패</h1>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => refreshPostData()}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
+        </main>
+        <Navigation />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col">
       {/* 헤더 */}
-      <Header />
+      <Header showSearch={true} onPlaceSelect={handlePlaceSelect} />
 
       {/* 메인 콘텐츠 영역 */}
       <main className="main-content bg-gray-50">
         <div className="px-4 py-3">
           {/* 게시물 목록 */}
           <div className="space-y-3">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                게시글이 없습니다.
+              </div>
+            )}
           </div>
         </div>
       </main>

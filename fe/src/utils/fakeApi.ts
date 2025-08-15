@@ -5,9 +5,10 @@ import type {
   CreatePostRequest,
   CreateStampBoardRequest,
 } from '../types/api';
-import type { User, LoginResponse, UpdateNicknameRequest } from '../types/auth';
+import type { User, UpdateNicknameRequest } from '../types/auth';
 
 // 테스트용 사용자 데이터
+// GET /users/me 엔드포인트 응답 데이터
 export const fakeUsers: User[] = [
   {
     id: 1,
@@ -17,6 +18,7 @@ export const fakeUsers: User[] = [
 ];
 
 // 테스트용 게시글 데이터 (API 명세서에 맞게 수정)
+// GET /posts/allPosts 엔드포인트 응답 데이터
 export const fakePosts: Post[] = [
   {
     id: 1,
@@ -36,7 +38,7 @@ export const fakePosts: Post[] = [
   },
   {
     id: 3,
-    title: '가미우동 추천',
+    title: '가미우동 추천2',
     content: '우동이 정말 맛있어요',
     address: '가미우동',
     latitude: 37.5665,
@@ -85,17 +87,19 @@ export const fakePosts: Post[] = [
 ];
 
 // 테스트용 북마크 데이터 (API 명세서에 맞게 수정)
+// GET /users/me/bookmarks 엔드포인트 응답 데이터
+// postId는 게시글 ID를 의미하며, 게시글이 없는 경우 북마크 ID를 사용
 export const fakeBookmarks: Bookmark[] = [
   {
-    postId: 1,
-    title: '스타벅스 홍대점',
+    postId: 1, // 게시글 ID
+    title: '스타벅스',
     address: '서울 마포구 홍대로 396',
     latitude: 37.5519,
     longitude: 126.9255,
     visited: true,
   },
   {
-    postId: 2,
+    postId: 2, // 게시글 ID
     title: '투썸플레이스 홍대점',
     address: '서울 마포구 홍대로 123',
     latitude: 37.5575,
@@ -103,7 +107,7 @@ export const fakeBookmarks: Bookmark[] = [
     visited: false,
   },
   {
-    postId: 3,
+    postId: 3, // 게시글 ID
     title: '할리스 커피 홍대점',
     address: '서울 마포구 홍대로 456',
     latitude: 37.549,
@@ -111,7 +115,7 @@ export const fakeBookmarks: Bookmark[] = [
     visited: false,
   },
   {
-    postId: 4,
+    postId: 4, // 게시글 ID
     title: '맛있는 치킨집',
     address: '서울 마포구 와우산로 123',
     latitude: 37.5535,
@@ -119,7 +123,7 @@ export const fakeBookmarks: Bookmark[] = [
     visited: true,
   },
   {
-    postId: 5,
+    postId: 5, // 게시글 ID
     title: '피자나라',
     address: '서울 마포구 와우산로 456',
     latitude: 37.555,
@@ -127,7 +131,7 @@ export const fakeBookmarks: Bookmark[] = [
     visited: false,
   },
   {
-    postId: 6,
+    postId: 6, // 게시글 ID
     title: '우동집',
     address: '서울 마포구 와우산로 789',
     latitude: 37.5565,
@@ -137,6 +141,7 @@ export const fakeBookmarks: Bookmark[] = [
 ];
 
 // 테스트용 스탬프보드 데이터 (API 명세서에 맞게 수정)
+// GET /stampboards/me/boards 엔드포인트 응답 데이터
 export const fakeStampBoards: StampBoard[] = [
   {
     id: 1,
@@ -146,15 +151,15 @@ export const fakeStampBoards: StampBoard[] = [
     user: { id: 1 },
     bookmarks: [
       {
-        postId: 1,
-        title: '스타벅스 홍대점',
+        postId: 1, // 게시글 ID
+        title: '스타벅스',
         address: '서울 마포구 홍대로 396',
         latitude: 37.5519,
         longitude: 126.9255,
         visited: true,
       },
       {
-        postId: 2,
+        postId: 2, // 게시글 ID
         title: '투썸플레이스 홍대점',
         address: '서울 마포구 홍대로 123',
         latitude: 37.5575,
@@ -162,7 +167,7 @@ export const fakeStampBoards: StampBoard[] = [
         visited: false,
       },
       {
-        postId: 3,
+        postId: 3, // 게시글 ID
         title: '할리스 커피 홍대점',
         address: '서울 마포구 홍대로 456',
         latitude: 37.549,
@@ -179,7 +184,7 @@ export const fakeStampBoards: StampBoard[] = [
     user: { id: 1 },
     bookmarks: [
       {
-        postId: 4,
+        postId: 4, // 게시글 ID
         title: '맛있는 치킨집',
         address: '서울 마포구 와우산로 123',
         latitude: 37.5535,
@@ -187,7 +192,7 @@ export const fakeStampBoards: StampBoard[] = [
         visited: true,
       },
       {
-        postId: 5,
+        postId: 5, // 게시글 ID
         title: '피자나라',
         address: '서울 마포구 와우산로 456',
         latitude: 37.555,
@@ -204,7 +209,7 @@ export const fakeStampBoards: StampBoard[] = [
     user: { id: 1 },
     bookmarks: [
       {
-        postId: 6,
+        postId: 6, // 게시글 ID
         title: '우동집',
         address: '서울 마포구 와우산로 789',
         latitude: 37.5565,
@@ -239,19 +244,23 @@ export class FakeAPI {
   }
 
   // 게시글 관련 Fake API
+  // GET /posts/allPosts 엔드포인트 시뮬레이션
   async getPosts(): Promise<Post[]> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return [...fakePosts];
   }
 
+  // GET /posts/{id} 엔드포인트 시뮬레이션
   async getPost(id: number): Promise<Post | null> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return fakePosts.find((post) => post.id === id) || null;
   }
 
-  async createPost(postData: CreatePostRequest): Promise<Post> {
+  // POST /posts 엔드포인트 시뮬레이션
+  // API 명세서: "게시글 작성 완료" 반환
+  async createPost(postData: CreatePostRequest): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
@@ -261,10 +270,12 @@ export class FakeAPI {
     };
 
     fakePosts.push(newPost);
-    return newPost;
+    return '게시글 작성 완료';
   }
 
-  async updatePost(id: number, postData: CreatePostRequest): Promise<Post> {
+  // PUT /posts/{id} 엔드포인트 시뮬레이션
+  // API 명세서: "게시글 수정 완료" 반환
+  async updatePost(id: number, postData: CreatePostRequest): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
@@ -277,21 +288,24 @@ export class FakeAPI {
     };
 
     fakePosts[index] = updatedPost;
-    return updatedPost;
+    return '게시글 수정 완료';
   }
 
-  async deletePost(id: number): Promise<boolean> {
+  // DELETE /posts/{id} 엔드포인트 시뮬레이션
+  // API 명세서: "게시글 삭제 완료" 반환
+  async deletePost(id: number): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
     const index = fakePosts.findIndex((post) => post.id === id);
-    if (index === -1) return false;
+    if (index === -1) throw new Error('게시글을 찾을 수 없습니다');
 
     fakePosts.splice(index, 1);
-    return true;
+    return '게시글 삭제 완료';
   }
 
   // 북마크 관련 Fake API
+  // GET /users/me/bookmarks?visited={visited} 엔드포인트 시뮬레이션
   async getBookmarks(visited?: boolean): Promise<Bookmark[]> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
@@ -302,21 +316,27 @@ export class FakeAPI {
     return [...fakeBookmarks];
   }
 
+  // POST /users/search 엔드포인트 시뮬레이션 (장소 정보로 북마크 추가)
+  // API 명세서: POST /users/search?placeName={placeName}&address={address}&latitude={latitude}&longitude={longitude}
+  // API 명세서: "Bookmark added by search" 반환
   async createBookmark(
     bookmarkData: Omit<Bookmark, 'postId'>
-  ): Promise<Bookmark> {
+  ): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
     const newBookmark: Bookmark = {
-      postId: Date.now(), // 현재 시간을 postId로 사용
+      postId: Date.now(), // 검색 기반 북마크의 경우 북마크 ID를 postId로 사용
       ...bookmarkData,
     };
 
     fakeBookmarks.push(newBookmark);
-    return newBookmark;
+    return 'Bookmark added by search';
   }
 
+  // ⚠️ API 명세서에 명시되지 않은 메서드 (백엔드 구현 필요)
+  // PATCH /users/me/bookmarks/{bookmarkId}/visited 엔드포인트 시뮬레이션
+  // 현재는 테스트용으로 유지하되, 실제 API 구현 시 제거 예정
   async updateBookmarkVisited(
     postId: number,
     visited: boolean
@@ -331,30 +351,35 @@ export class FakeAPI {
     return bookmark;
   }
 
-  async deleteBookmark(postId: number): Promise<boolean> {
+  // DELETE /users/{postId} 엔드포인트 시뮬레이션 (북마크 취소)
+  // API 명세서: DELETE /users/{postId} - "북마크 취소됨" 반환
+  async deleteBookmark(postId: number): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
     const index = fakeBookmarks.findIndex((b) => b.postId === postId);
-    if (index === -1) return false;
+    if (index === -1) throw new Error('북마크를 찾을 수 없습니다');
 
     fakeBookmarks.splice(index, 1);
-    return true;
+    return '북마크 취소됨';
   }
 
   // 스탬프보드 관련 Fake API
+  // GET /stampboards/me/boards 엔드포인트 시뮬레이션
   async getStampBoards(): Promise<StampBoard[]> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return [...fakeStampBoards];
   }
 
+  // GET /stampboards/{id} 엔드포인트 시뮬레이션
   async getStampBoard(id: number): Promise<StampBoard | null> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return fakeStampBoards.find((board) => board.id === id) || null;
   }
 
+  // POST /stampboards?title={title}&color={color} 엔드포인트 시뮬레이션
   async createStampBoard(
     boardData: CreateStampBoardRequest
   ): Promise<StampBoard> {
@@ -373,7 +398,9 @@ export class FakeAPI {
     return newBoard;
   }
 
-  async updateStampBoardTitle(id: number, title: string): Promise<StampBoard> {
+  // PATCH /stampboards/{boardId}/title?title={title} 엔드포인트 시뮬레이션
+  // API 명세서: "보드 이름이 수정되었습니다." 반환
+  async updateStampBoardTitle(id: number, title: string): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
@@ -381,10 +408,12 @@ export class FakeAPI {
     if (!board) throw new Error('스탬프보드를 찾을 수 없습니다');
 
     board.title = title;
-    return board;
+    return '보드 이름이 수정되었습니다.';
   }
 
-  async updateStampBoardColor(id: number, color: string): Promise<StampBoard> {
+  // PATCH /stampboards/{boardId}/color?color={color} 엔드포인트 시뮬레이션
+  // API 명세서: "보드 컬러가 수정되었습니다." 반환
+  async updateStampBoardColor(id: number, color: string): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
@@ -392,44 +421,190 @@ export class FakeAPI {
     if (!board) throw new Error('스탬프보드를 찾을 수 없습니다');
 
     board.color = color;
-    return board;
+    return '보드 컬러가 수정되었습니다.';
   }
 
-  async deleteStampBoard(id: number): Promise<boolean> {
+  // DELETE /stampboards/{id} 엔드포인트 시뮬레이션
+  // API 명세서: "삭제 완료" 반환
+  async deleteStampBoard(id: number): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
     const index = fakeStampBoards.findIndex((b) => b.id === id);
-    if (index === -1) return false;
+    if (index === -1) throw new Error('스탬프보드를 찾을 수 없습니다');
 
     fakeStampBoards.splice(index, 1);
-    return true;
+    return '삭제 완료';
+  }
+
+  // 스탬프보드-북마크 연결 관련 Fake API
+  // POST /stampboards/{boardId}/bookmark 엔드포인트 시뮬레이션
+  // API 명세서: 요청 본문에 북마크 ID 숫자값을 raw number로 전송, "북마크 추가 완료" 반환
+  async addBookmarkToStampBoard(
+    boardId: number,
+    bookmarkId: number
+  ): Promise<string> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const board = fakeStampBoards.find((b) => b.id === boardId);
+    const bookmark = fakeBookmarks.find((b) => b.postId === bookmarkId);
+
+    if (!board || !bookmark)
+      throw new Error('스탬프보드 또는 북마크를 찾을 수 없습니다');
+
+    // 이미 추가되어 있는지 확인
+    if (board.bookmarks?.some((b) => b.postId === bookmarkId)) {
+      throw new Error('이미 추가된 북마크입니다');
+    }
+
+    // 북마크를 스탬프보드에 추가
+    if (!board.bookmarks) board.bookmarks = [];
+    board.bookmarks.push({ ...bookmark });
+
+    return '북마크 추가 완료';
+  }
+
+  // DELETE /stampboards/{boardId}/bookmark 엔드포인트 시뮬레이션
+  // API 명세서: "북마크 삭제 완료" 반환
+  async removeBookmarkFromStampBoard(
+    boardId: number,
+    bookmarkId: number
+  ): Promise<string> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const board = fakeStampBoards.find((b) => b.id === boardId);
+    if (!board || !board.bookmarks)
+      throw new Error('스탬프보드를 찾을 수 없습니다');
+
+    const index = board.bookmarks.findIndex((b) => b.postId === bookmarkId);
+    if (index === -1) throw new Error('북마크를 찾을 수 없습니다');
+
+    board.bookmarks.splice(index, 1);
+    return '북마크 삭제 완료';
+  }
+
+  // GET /stampboards/{boardId}/bookmarks 엔드포인트 시뮬레이션 (API 명세서에 명시되지 않음)
+  async getStampBoardBookmarks(boardId: number): Promise<Bookmark[]> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const board = fakeStampBoards.find((b) => b.id === boardId);
+    return board?.bookmarks || [];
+  }
+
+  // 게시글 관련 Fake API
+  // GET /posts/allPosts 엔드포인트 시뮬레이션
+  async getAllPosts(): Promise<Post[]> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+    return [...fakePosts];
+  }
+
+  // GET /posts/search?keyword={keyword} 엔드포인트 시뮬레이션
+  async searchPosts(keyword: string): Promise<Post[]> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const filtered = fakePosts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(keyword.toLowerCase()) ||
+        post.content.toLowerCase().includes(keyword.toLowerCase()) ||
+        post.address.toLowerCase().includes(keyword.toLowerCase())
+    );
+    return filtered;
+  }
+
+  // GET /posts/me 엔드포인트 시뮬레이션
+  async getMyPosts(): Promise<Post[]> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+    // 테스트용으로 모든 게시글을 반환 (실제로는 사용자별로 필터링)
+    return [...fakePosts];
+  }
+
+  // POST /posts/ 엔드포인트 시뮬레이션
+  // API 명세서: "게시글 작성 완료" 반환
+  async createPost(request: CreatePostRequest): Promise<string> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const newPost: Post = {
+      id: fakePosts.length + 1,
+      title: request.title,
+      content: request.content,
+      address: request.address,
+      latitude: request.latitude,
+      longitude: request.longitude,
+    };
+
+    fakePosts.push(newPost);
+    return '게시글 작성 완료';
+  }
+
+  // PUT /posts/{postId} 엔드포인트 시뮬레이션
+  // API 명세서: "게시글 수정 완료" 반환
+  async updatePost(
+    postId: number,
+    request: CreatePostRequest
+  ): Promise<string> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const post = fakePosts.find((p) => p.id === postId);
+    if (!post) throw new Error('게시글을 찾을 수 없습니다');
+
+    post.title = request.title;
+    post.content = request.content;
+    post.address = request.address;
+    post.latitude = request.latitude;
+    post.longitude = request.longitude;
+
+    return '게시글 수정 완료';
+  }
+
+  // DELETE /posts/{postId} 엔드포인트 시뮬레이션
+  // API 명세서: "게시글 삭제 완료" 반환
+  async deletePost(postId: number): Promise<string> {
+    if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
+    await this.simulateDelay();
+
+    const index = fakePosts.findIndex((p) => p.id === postId);
+    if (index === -1) throw new Error('게시글을 찾을 수 없습니다');
+
+    fakePosts.splice(index, 1);
+    return '게시글 삭제 완료';
   }
 
   // 사용자 관련 Fake API
+  // GET /users/me 엔드포인트 시뮬레이션
   async getUserInfo(): Promise<User> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
     return { ...fakeUsers[0] };
   }
 
-  async updateNickname(request: UpdateNicknameRequest): Promise<User> {
+  // PATCH /users/me 엔드포인트 시뮬레이션
+  // API 명세서: "닉네임이 성공적으로 변경되었습니다." 반환
+  async updateNickname(request: UpdateNicknameRequest): Promise<string> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
     const user = fakeUsers[0];
     user.nickname = request.nickname;
-    return { ...user };
+    return '닉네임이 성공적으로 변경되었습니다.';
   }
 
-  // 테스트 로그인
-  async testLogin(): Promise<LoginResponse> {
+  // 테스트 로그인 (실제 API와는 다른 테스트용 메서드)
+  // POST /auth/google 엔드포인트와 유사한 응답 형식 시뮬레이션
+  // API 명세서: { accessToken } 반환
+  async testLogin(): Promise<{ accessToken: string }> {
     if (!this.isTestMode) throw new Error('테스트 모드가 아닙니다');
     await this.simulateDelay();
 
     return {
       accessToken: `test-token-${Date.now()}`,
-      user: { ...fakeUsers[0] },
     };
   }
 

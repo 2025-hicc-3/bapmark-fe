@@ -190,8 +190,13 @@ const StampMap: React.FC<StampMapProps> = ({
           });
           markersRef.current = [];
 
+          // 디버깅: 전달받은 데이터 확인
+          console.log('StampMap에서 받은 stampBook:', stampBook);
+          console.log('StampMap에서 받은 places:', stampBook.places);
+
           // 새로운 마커들 추가
           stampBook.places.forEach((place) => {
+            console.log('처리 중인 place:', place);
             const position = new kakao.maps.LatLng(place.lat, place.lng);
 
             // 방문 상태에 따라 다른 아이콘 사용

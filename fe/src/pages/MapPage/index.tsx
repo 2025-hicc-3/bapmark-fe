@@ -526,7 +526,7 @@ const MapPage = () => {
           // 지도 생성
           const options = {
             center: new kakao.maps.LatLng(37.5519, 126.9255), // 홍익대학교
-            level: 3,
+            level: 5, // 범위를 넓혀서 더 넓은 지역을 보여줌
           };
 
           console.log('지도 생성 시작');
@@ -568,15 +568,19 @@ const MapPage = () => {
   }, [allPlaces, createMarkers, kakaoMap]);
 
   const handleKakaoMap = () => {
-    // 카카오맵 앱으로 열기
-    const url = `kakaomap://look?p=${37.5665},${126.978}`;
-    window.open(url);
+    if (selectedPlace) {
+      // 카카오맵 앱으로 열기
+      const url = `https://map.kakao.com/link/map/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`;
+      window.open(url, '_blank');
+    }
   };
 
   const handleNaverMap = () => {
-    // 네이버맵 앱으로 열기
-    const url = `nmap://place?lat=${37.5665}&lng=${126.978}&name=서울시청`;
-    window.open(url);
+    if (selectedPlace) {
+      // 네이버맵 앱으로 열기
+      const url = `https://map.naver.com/p/search/${selectedPlace.name}`;
+      window.open(url, '_blank');
+    }
   };
 
   if (error) {
@@ -658,22 +662,6 @@ const MapPage = () => {
           </div>
         </div>
 
-        {/* 지도 앱 연동 버튼들 */}
-        <div className="mt-4 px-4 space-y-2">
-          <button
-            onClick={handleKakaoMap}
-            className="w-full py-3 bg-yellow-400 text-black rounded-lg font-medium hover:bg-yellow-500 transition-colors"
-          >
-            카카오맵 앱에서 보기
-          </button>
-          <button
-            onClick={handleNaverMap}
-            className="w-full py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
-          >
-            네이버맵 앱에서 보기
-          </button>
-        </div>
-
         {/* 장소 정보 */}
         {allPlaces.length > 0 && (
           <div className="mt-6 mx-4 bg-white rounded-lg shadow-sm p-4">
@@ -725,6 +713,8 @@ const MapPage = () => {
           place={selectedPlace}
           isOpen={showPlaceDetail}
           onClose={handleClosePlaceDetail}
+          onKakaoMap={handleKakaoMap}
+          onNaverMap={handleNaverMap}
           onBookmarkSave={handleBookmarkSave}
           onBookmarkToggle={handleBookmarkToggle}
           onVisitToggle={handleVisitToggle}

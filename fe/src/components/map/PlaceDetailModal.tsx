@@ -172,14 +172,11 @@ const PlaceDetailModal: React.FC<PlaceDetailModalProps> = ({
             {/* 현재 들어가있는 스탬프북 표시 */}
             {currentStampBoards.length > 0 && (
               <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  현재 들어가있는 스탬프북
-                </h4>
                 <div className="flex flex-wrap gap-2">
                   {currentStampBoards.map((board) => (
                     <div
                       key={board.id}
-                      className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-full text-sm"
+                      className="flex items-center space-x-2 px-3 py-2 mt-2 bg-gray-100 rounded-full text-sm"
                     >
                       <div
                         className="w-3 h-3 rounded-full"

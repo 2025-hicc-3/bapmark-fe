@@ -17,7 +17,7 @@ interface Place {
 }
 
 interface Stamp {
-  id: string;
+  id: number;
   name: string;
   color: string;
   locations: Place[];
@@ -54,8 +54,8 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
     name: board.title,
     color: board.color,
     locations: (board.bookmarks || []).map((bookmark) => ({
-      id: bookmark.id,
-      name: bookmark.placeName,
+      id: bookmark.postId, // bookmark.id 대신 postId 사용
+      name: bookmark.title, // bookmark.placeName 대신 title 사용
       lat: bookmark.latitude,
       lng: bookmark.longitude,
       isVisited: bookmark.visited,
@@ -114,7 +114,7 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   };
 
   // 스탬프북 삭제
-  const handleDeleteStampBoard = async (stampId: string) => {
+  const handleDeleteStampBoard = async (stampId: number) => {
     try {
       const success = await deleteStampBoard(stampId);
       if (success) {
@@ -308,6 +308,9 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
         <StampModifyModal
           isOpen={showModifyModal}
           stamp={selectedStampForModify}
+          stampBoard={stampData.stampBoards.find(
+            (board) => board.id === selectedStampForModify?.id
+          )}
           onClose={handleCloseModifyModal}
           onSave={handleSaveModify}
           onDelete={handleDeleteStampBoard}
