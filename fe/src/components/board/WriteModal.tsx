@@ -1,44 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import WriteForm from './WriteForm';
 import MyPostCard from './MyPostCard';
-import type { Post, CreatePostRequest } from '../../types/api';
+import { usePost } from '../../store/PostContext';
+import type { CreatePostRequest, Post } from '../../types/api';
 
 interface WriteModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// 임시 내가 쓴 글 데이터 (API 명세서에 맞게 수정)
-const mockMyPosts: Post[] = [
-  {
-    id: '1',
-    title: '내가 쓴 글 1',
-    content: '내가 쓴 글 내용입니다',
-    address: '카미야',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '1',
-      email: 'user1@example.com',
-    },
-  },
-  {
-    id: '2',
-    title: '내가 쓴 글 2',
-    content: '내가 쓴 글 내용입니다',
-    address: '한신포차',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '1',
-      email: 'user1@example.com',
-    },
-  },
-];
-
 const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'write' | 'myPosts'>('write');
-  const [myPosts] = useState(mockMyPosts);
+  const { createPost, getMyPosts, refreshPostData } = usePost();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [myPosts, setMyPosts] = useState<Post[]>([]);
+  const [isLoadingMyPosts, setIsLoadingMyPosts] = useState(false);
+
+  // 본인 글 조회
+  const loadMyPosts = async () => {
+    try {
+      setIsLoadingMyPosts(true);
+      const posts = await getMyPosts();
+      setMyPosts(posts);
+    } catch (error) {
+      console.error('본인 글 조회 오류:', error);
+      setMyPosts([]);
+    } finally {
+      setIsLoadingMyPosts(false);
+    }
+  };
+
+  // 탭 변경 시 본인 글 로드
+  useEffect(() => {
+    if (activeTab === 'myPosts') {
+      loadMyPosts();
+    }
+  }, [activeTab]);
 
   if (!isOpen) return null;
 
@@ -48,11 +46,35 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSubmitPost = (postData: CreatePostRequest) => {
-    // TODO: API 호출하여 게시글 등록
-    console.log('게시글 등록:', postData);
-    // 성공 시 모달 닫기
-    onClose();
+  const handleSubmitPost = async (postData: CreatePostRequest) => {
+    try {
+      setIsSubmitting(true);
+      setSubmitMessage('게시글을 등록하는 중...');
+
+      // PostContext의 createPost 함수 사용
+      const success = await createPost(postData);
+
+      if (success) {
+        setSubmitMessage('게시글이 성공적으로 등록되었습니다!');
+        // 게시글 목록 새로고침
+        await refreshPostData();
+        // 본인 글 목록도 새로고침
+        if (activeTab === 'myPosts') {
+          await loadMyPosts();
+        }
+        // 1초 후 모달 닫기
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      } else {
+        setSubmitMessage('게시글 등록에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('게시글 등록 오류:', error);
+      setSubmitMessage('게시글 등록 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -84,6 +106,15 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
+        {/* 제출 상태 메시지 */}
+        {submitMessage && (
+          <div className="px-4 py-2 bg-blue-50 border-t border-blue-200">
+            <div className="text-sm text-blue-800 text-center">
+              {submitMessage}
+            </div>
+          </div>
+        )}
+
         {/* 콘텐츠 */}
         <div className="flex-1 overflow-y-auto max-h-[calc(80vh-80px)]">
           {activeTab === 'write' ? (
@@ -92,9 +123,18 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <div className="p-4 space-y-3">
-              {myPosts.map((post) => (
-                <MyPostCard key={post.id} post={post} />
-              ))}
+              {isLoadingMyPosts ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600">본인 글을 불러오는 중...</p>
+                </div>
+              ) : myPosts.length > 0 ? (
+                myPosts.map((post) => <MyPostCard key={post.id} post={post} />)
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  작성한 게시글이 없습니다.
+                </div>
+              )}
             </div>
           )}
         </div>
