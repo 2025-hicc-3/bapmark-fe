@@ -25,7 +25,16 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </h3>
 
         {/* 내용 */}
-        <p className="text-black font-medium text-xs leading-7">
+        <p 
+          className="text-black font-medium text-xs leading-7 overflow-hidden"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: '1.4',
+            maxHeight: '2.8em', // 2줄 높이 제한 (1.4 * 2)
+          }}
+        >
           {post.content}
         </p>
 

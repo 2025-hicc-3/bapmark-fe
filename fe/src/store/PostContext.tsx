@@ -15,6 +15,7 @@ interface PostContextType {
   isLoading: boolean;
   error: string | null;
   refreshPostData: () => Promise<void>;
+  getPost: (postId: number) => Promise<Post | null>;
   createPost: (request: CreatePostRequest) => Promise<boolean>;
   updatePost: (postId: number, request: CreatePostRequest) => Promise<boolean>;
   deletePost: (postId: number) => Promise<boolean>;
@@ -172,6 +173,35 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     }
   };
 
+  // 개별 게시글 조회
+  const getPost = async (postId: number): Promise<Post | null> => {
+    if (!isLoggedIn) return null;
+
+    try {
+      let postData: Post | null;
+
+      if (import.meta.env.DEV) {
+        // 개발 모드에서는 fakeApi 사용
+        fakeApi.setTestMode(true); // 테스트 모드 활성화
+        postData = await fakeApi.getPost(postId);
+      } else {
+        // 프로덕션 모드에서는 실제 API 사용
+        const response = await postAPI.getPost(postId);
+        postData = response.data || null;
+      }
+
+      return postData;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : '게시글을 불러오는데 실패했습니다.';
+      setError(errorMessage);
+      console.error('게시글 조회 오류:', err);
+      return null;
+    }
+  };
+
   // 로그인 상태가 변경될 때마다 게시글 데이터 새로고침
   useEffect(() => {
     if (isLoggedIn) {
@@ -187,6 +217,7 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     isLoading,
     error,
     refreshPostData,
+    getPost,
     createPost,
     updatePost,
     deletePost,

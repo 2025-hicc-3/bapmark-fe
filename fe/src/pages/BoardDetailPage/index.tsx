@@ -4,11 +4,13 @@ import HeaderWithoutSearch from '../../components/layout/HeaderWithoutSearch';
 import Navigation from '../../components/layout/Navigation';
 import saveIcon from '../../assets/icons/save.svg';
 import saveFillIcon from '../../assets/icons/save_fill.svg';
+import { usePost } from '../../store/PostContext';
 import type { Post } from '../../types/api';
 
 const BoardDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getPost } = usePost();
   const [isSaved, setIsSaved] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,20 +20,6 @@ const BoardDetailPage = () => {
   const markerRef = useRef<any>(null);
 
   const apiKey = import.meta.env.VITE_KAKAO_MAP_API_KEY;
-
-  // 임시 게시물 데이터 (API 명세서에 맞게 수정)
-  const mockPost: Post = {
-    id: id || '1',
-    title: '카미야가 어쩌구저쩌구',
-    content: '내용은 이렇고 저렇고. 정말 맛있는 곳이에요. 꼭 가보세요!',
-    address: '카미야',
-    latitude: 37.5665,
-    longitude: 126.978,
-    user: {
-      id: '1',
-      email: 'user1@example.com',
-    },
-  };
 
   // 카카오맵 SDK 로드
   const loadKakaoMapSDK = () => {
@@ -109,24 +97,28 @@ const BoardDetailPage = () => {
   };
 
   useEffect(() => {
-    // TODO: 실제 API 호출로 대체
-    // const fetchPost = async () => {
-    //   try {
-    //     const response = await fetch(`/api/posts/${id}`);
-    //     const data = await response.json();
-    //     setPost(data);
-    //   } catch (error) {
-    //     console.error('게시물 조회 실패:', error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    // fetchPost();
+    const fetchPost = async () => {
+      if (!id) return;
 
-    // 임시로 mock 데이터 사용
-    setPost(mockPost);
-    setLoading(false);
-  }, [id]);
+      try {
+        setLoading(true);
+        const postData = await getPost(parseInt(id));
+        if (postData) {
+          setPost(postData);
+        } else {
+          // 게시글을 찾을 수 없는 경우
+          setPost(null);
+        }
+      } catch (error) {
+        console.error('게시물 조회 실패:', error);
+        setPost(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [id, getPost]);
 
   useEffect(() => {
     if (post && !mapLoaded) {
@@ -215,23 +207,11 @@ const BoardDetailPage = () => {
             </button>
           </div>
 
-          {/* 작성자 정보 */}
-          {post.user && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span>작성자: {post.user.email}</span>
-            </div>
-          )}
+          {/* 작성자 정보는 API 명세서에 포함되지 않음 */}
 
           {/* 주소 정보 */}
           <div className="text-sm text-gray-700">
-            <span className="font-medium">📍 위치:</span> {post.address}
-          </div>
-
-          {/* 위도/경도 정보 (개발용, 실제로는 지도에 표시) */}
-          <div className="text-xs text-gray-500">
-            <span>
-              위도: {post.latitude}, 경도: {post.longitude}
-            </span>
+            <span className="font-medium"></span> {post.address}
           </div>
 
           {/* 카카오맵 지도 */}
