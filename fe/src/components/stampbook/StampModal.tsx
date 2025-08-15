@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import makeNewIcon from '../../assets/icons/make_new.svg';
 import colorIcon from '../../assets/icons/color.svg';
 import StampBook from './StampBook';
 import StampMap from './StampMap';
 import StampModifyModal from './StampModifyModal';
+import StampCompletionAnimation from '../common/StampCompletionAnimation';
 import { useStamp } from '../../store/StampContext';
 import { colorPalette } from './colorPalette';
 
@@ -44,6 +45,14 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const [selectedColorForCreate, setSelectedColorForCreate] =
     useState<string>('');
 
+  // 스탬프 완성 애니메이션 상태
+  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
+
+  // 완성된 스탬프를 추적하는 상태 (중복 애니메이션 방지)
+  const [completedStamps, setCompletedStamps] = useState<Set<number>>(
+    new Set()
+  );
+
   // StampContext에서 데이터 가져오기
   const { stampData, createStampBoard, updateStampBoard, deleteStampBoard } =
     useStamp();
@@ -70,6 +79,37 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
     };
   });
 
+  // 스탬프 완성 상태 감지
+  useEffect(() => {
+    const checkStampCompletion = () => {
+      // 이미 애니메이션이 표시 중이면 체크하지 않음
+      if (showCompletionAnimation) return;
+
+      // 각 스탬프보드의 완성 상태를 체크
+      stampData.stampBoards.forEach((board) => {
+        // 장소가 2개 이상 있어야 스탬프로 간주
+        if (board.bookmarks && board.bookmarks.length >= 2) {
+          const allVisited = board.bookmarks.every(
+            (bookmark) => bookmark.visited
+          );
+
+          // 이미 완성된 스탬프인지 확인
+          if (allVisited && !completedStamps.has(board.id)) {
+            console.log(
+              `🎉 스탬프 "${board.title}" 완성! (${board.bookmarks.length}개 장소 모두 방문)`
+            );
+            // 완성된 스탬프 목록에 추가
+            setCompletedStamps((prev) => new Set(prev).add(board.id));
+            setShowCompletionAnimation(true);
+            return; // 하나라도 완성되면 중단
+          }
+        }
+      });
+    };
+
+    checkStampCompletion();
+  }, [stampData.stampBoards, showCompletionAnimation]); // showCompletionAnimation 의존성 다시 추가
+
   const handleStampClick = (stamp: Stamp) => {
     setSelectedStampBook(stamp);
     setShowMap(true);
@@ -78,6 +118,11 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
   const handleStampLongPress = (stamp: Stamp) => {
     setSelectedStampForModify(stamp);
     setShowModifyModal(true);
+  };
+
+  // 스탬프 완성 애니메이션 완료 핸들러
+  const handleAnimationComplete = () => {
+    setShowCompletionAnimation(false);
   };
 
   // make_new 아이콘 클릭 시 새 스탬프북 만들기 모달 표시
@@ -416,6 +461,12 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
         )}
+
+        {/* 스탬프 완성 애니메이션 */}
+        <StampCompletionAnimation
+          isVisible={showCompletionAnimation}
+          onAnimationComplete={handleAnimationComplete}
+        />
       </div>
     </>
   );

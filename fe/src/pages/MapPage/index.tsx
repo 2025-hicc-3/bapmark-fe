@@ -5,6 +5,7 @@ import emptyMarkIcon from '../../assets/icons/empty_mark.svg';
 import fillMarkIcon from '../../assets/icons/fill_mark.svg';
 import { useStamp } from '../../store/StampContext';
 import PlaceDetailModal from '../../components/map/PlaceDetailModal';
+import StampCompletionAnimation from '../../components/common/StampCompletionAnimation';
 import type { SearchResult } from '../../types/search';
 
 interface PlaceDetail {
@@ -32,6 +33,12 @@ const MapPage = () => {
   const markersRef = useRef<any[]>([]);
   const mapInitializedRef = useRef(false);
   const [isInitializing, setIsInitializing] = useState(false);
+  
+  // 스탬프 완성 애니메이션 상태
+  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
+  
+  // 완성된 스탬프를 추적하는 상태 (중복 애니메이션 방지)
+  const [completedStamps, setCompletedStamps] = useState<Set<number>>(new Set());
 
   // StampContext에서 데이터 가져오기
   const {
@@ -84,7 +91,7 @@ const MapPage = () => {
   // allPlaces는 localPlaces를 참조
   const allPlaces = localPlaces;
 
-  // allPlaces 변경 시 로그
+  // allPlaces 변경 시 로그 및 스탬프 완성 상태 감지
   useEffect(() => {
     console.log('allPlaces 변경됨:', allPlaces.length);
     // 각 장소의 스탬프북 정보 로깅
@@ -96,7 +103,36 @@ const MapPage = () => {
         );
       }
     });
-  }, [allPlaces]);
+
+    // 스탬프 완성 상태 감지
+    const checkStampCompletion = () => {
+      // 이미 애니메이션이 표시 중이면 체크하지 않음
+      if (showCompletionAnimation) return;
+
+      // 각 스탬프보드의 완성 상태를 체크
+      stampData.stampBoards.forEach((board) => {
+        // 장소가 2개 이상 있어야 스탬프로 간주
+        if (board.bookmarks && board.bookmarks.length >= 2) {
+          const allVisited = board.bookmarks.every(
+            (bookmark) => bookmark.visited
+          );
+          
+          // 이미 완성된 스탬프인지 확인
+          if (allVisited && !completedStamps.has(board.id)) {
+            console.log(
+              `🎉 스탬프 "${board.title}" 완성! (${board.bookmarks.length}개 장소 모두 방문)`
+            );
+            // 완성된 스탬프 목록에 추가
+            setCompletedStamps(prev => new Set(prev).add(board.id));
+            setShowCompletionAnimation(true);
+            return; // 하나라도 완성되면 중단
+          }
+        }
+      });
+    };
+
+    checkStampCompletion();
+  }, [allPlaces, stampData.stampBoards, showCompletionAnimation]);
 
   const handlePlaceClick = useCallback((place: PlaceDetail) => {
     setSelectedPlace(place);
@@ -693,6 +729,12 @@ const MapPage = () => {
     }
   };
 
+  // 스탬프 완성 애니메이션 완료 핸들러
+  const handleAnimationComplete = () => {
+    setShowCompletionAnimation(false);
+    // 애니메이션이 완료되면 완성된 스탬프 목록은 유지 (중복 실행 방지)
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -838,6 +880,12 @@ const MapPage = () => {
           }))}
         />
       )}
+
+      {/* 스탬프 완성 애니메이션 */}
+      <StampCompletionAnimation
+        isVisible={showCompletionAnimation}
+        onAnimationComplete={handleAnimationComplete}
+      />
     </div>
   );
 };
