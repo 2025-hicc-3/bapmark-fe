@@ -43,6 +43,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 throw new Error('인증 실패');
               }
 
+              // 구글 로그인 플래그 설정
+              localStorage.setItem('isTestLogin', 'false');
+              
               // 실제 API 응답에서 토큰만으로 로그인 (사용자 정보는 fetchUserInfo에서 가져옴)
               await login(data.accessToken);
               setIsLoading(false);

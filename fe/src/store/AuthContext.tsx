@@ -61,6 +61,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 로그인 후 사용자 정보 가져오기
     try {
       await fetchUserInfo();
+      
+      // 로그인 성공 이벤트 발생 (다른 컴포넌트들이 로그인 완료를 감지할 수 있도록)
+      window.dispatchEvent(new CustomEvent('loginSuccess'));
     } catch (error) {
       console.error('로그인 후 사용자 정보 조회 실패:', error);
     }
@@ -69,6 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userData');
+    localStorage.removeItem('isTestLogin'); // 테스트 로그인 플래그도 제거
     setIsLoggedIn(false);
     setUser(null);
   };
