@@ -50,8 +50,11 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
 
   // StampContext 데이터를 기존 Stamp 형식으로 변환
   const stamps: Stamp[] = stampData.stampBoards.map((board) => {
-    console.log(`스탬프보드 ${board.id} (${board.title}) 변환:`, board.bookmarks);
-    
+    console.log(
+      `스탬프보드 ${board.id} (${board.title}) 변환:`,
+      board.bookmarks
+    );
+
     return {
       id: board.id.toString(), // number를 string으로 변환
       name: board.title,
@@ -207,7 +210,7 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
       id: selectedStampBook.id,
       name: selectedStampBook.name,
       color: selectedStampBook.color,
-      places: (selectedStampBook.locations || []).map(location => ({
+      places: (selectedStampBook.locations || []).map((location) => ({
         ...location,
         id: location.id.toString(), // string으로 변환
       })),
@@ -217,7 +220,7 @@ const StampModal: React.FC<StampModalProps> = ({ isOpen, onClose }) => {
       id: stamp.id,
       name: stamp.name,
       color: stamp.color,
-      places: (stamp.locations || []).map(location => ({
+      places: (stamp.locations || []).map((location) => ({
         ...location,
         id: location.id.toString(), // string으로 변환
       })),

@@ -128,6 +128,77 @@ const ApiTestPage = () => {
     }
   };
 
+  // 내가 쓴 글 조회 테스트
+  const testMyPosts = async () => {
+    setIsLoading(true);
+    setTestResult('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setTestResult('❌ 토큰이 없습니다. 먼저 로그인해주세요.');
+        return;
+      }
+
+      setTestResult('🔄 GET /api/posts/me API 호출 중...\n');
+      setTestResult((prev) => prev + `토큰: ${token.substring(0, 20)}...\n\n`);
+
+      // JWT 토큰 디코딩하여 내용 확인
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          setTestResult((prev) => prev + `JWT 페이로드:\n- 이메일: ${payload.sub}\n- OAuth ID: ${payload.oauthId}\n- 만료시간: ${new Date(payload.exp * 1000).toLocaleString()}\n\n`);
+        }
+      } catch (e) {
+        setTestResult((prev) => prev + `JWT 디코딩 실패: ${e}\n\n`);
+      }
+
+      const response = await postAPI.getMyPosts();
+
+      if (response.data && Array.isArray(response.data)) {
+        setTestResult(
+          (prev) =>
+            prev +
+            `✅ 성공!\n\n응답 데이터:\n${JSON.stringify(response.data, null, 2)}\n\n게시글 개수: ${response.data.length}개`
+        );
+      } else if (response.error) {
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ API 에러: ${response.error}\n\n응답:\n${JSON.stringify(response, null, 2)}`
+        );
+      } else {
+        setTestResult(
+          (prev) =>
+            prev +
+            `❌ 응답 데이터가 없습니다.\n\n응답:\n${JSON.stringify(response, null, 2)}`
+        );
+      }
+    } catch (error: any) {
+      console.error('내가 쓴 글 API 테스트 오류:', error);
+
+      let errorMessage = '❌ API 호출 실패\n\n';
+
+      if (error.response) {
+        // 서버 응답이 있는 경우
+        errorMessage += `상태 코드: ${error.response.status}\n`;
+        errorMessage += `응답 데이터: ${JSON.stringify(error.response.data, null, 2)}\n`;
+      } else if (error.request) {
+        // 요청은 보냈지만 응답이 없는 경우
+        errorMessage += '서버에 연결할 수 없습니다.\n';
+        errorMessage += `요청: ${JSON.stringify(error.request, null, 2)}\n`;
+      } else {
+        // 요청 자체에 문제가 있는 경우
+        errorMessage += `요청 오류: ${error.message}\n`;
+      }
+
+      setTestResult(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 홍익대학교를 북마크에 저장하는 테스트
   const testAddBookmark = async () => {
     setIsLoading(true);
@@ -507,7 +578,7 @@ const ApiTestPage = () => {
                   </p>
                 </div>
 
-                <div>
+                <div className="space-y-3">
                   <button
                     onClick={testPostsAllPosts}
                     disabled={isLoading || !isLoggedIn}
@@ -524,6 +595,23 @@ const ApiTestPage = () => {
                   <p className="text-xs text-gray-500 mt-1">
                     현재 로그인된 사용자의 토큰으로 전체 게시글 목록 API를
                     테스트합니다.
+                  </p>
+                  
+                  <button
+                    onClick={testMyPosts}
+                    disabled={isLoading || !isLoggedIn}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                      isLoading || !isLoggedIn
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isLoading
+                      ? '테스트 중...'
+                      : 'GET /api/posts/me - 내가 쓴 글 조회'}
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    JWT 토큰으로 본인이 작성한 게시글을 조회하는 API를 테스트합니다.
                   </p>
                 </div>
 

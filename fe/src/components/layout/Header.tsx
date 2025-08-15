@@ -10,12 +10,16 @@ import { searchPlaces } from '../../services/kakaoSearch';
 
 interface HeaderProps {
   onPlaceSelect?: (place: SearchResult) => void;
+  onPostSearch?: (keyword: string) => void;
   showSearch?: boolean;
+  searchType?: 'place' | 'post' | 'both';
 }
 
 const Header: React.FC<HeaderProps> = ({
   onPlaceSelect,
+  onPostSearch,
   showSearch = false,
+  searchType = 'place',
 }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isStampModalOpen, setIsStampModalOpen] = useState(false);
@@ -57,14 +61,29 @@ const Header: React.FC<HeaderProps> = ({
     if (query.trim().length === 0) {
       setSearchResults([]);
       setIsSearching(false);
+      // 빈 검색어일 때 게시글 검색도 초기화
+      if (onPostSearch) {
+        onPostSearch('');
+      }
       return;
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         setIsSearching(true);
-        const results = await searchPlaces(query);
-        setSearchResults(results);
+        
+        // 검색 타입에 따라 다른 검색 실행
+        if (searchType === 'place' || searchType === 'both') {
+          const results = await searchPlaces(query);
+          setSearchResults(results);
+        }
+        
+        // 게시글 검색 실행
+        if (searchType === 'post' || searchType === 'both') {
+          if (onPostSearch) {
+            onPostSearch(query);
+          }
+        }
       } catch (error) {
         console.error('검색 오류:', error);
         setSearchResults([]);
@@ -155,7 +174,13 @@ const Header: React.FC<HeaderProps> = ({
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onBlur={handleSearchBlur}
-                placeholder="장소를 검색하세요..."
+                placeholder={
+                  searchType === 'place' 
+                    ? "장소를 검색하세요..." 
+                    : searchType === 'post' 
+                    ? "게시글을 검색하세요..." 
+                    : "장소 또는 게시글을 검색하세요..."
+                }
                 className="w-full px-4 py-2 pl-10 bg-gray-50 border-[3px] border-black rounded-full text-sm focus:outline-none focus:border-blue-500"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -175,8 +200,8 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* 검색 결과 */}
-            {showResults && (
+            {/* 검색 결과 - 장소 검색일 때만 표시 */}
+            {showResults && (searchType === 'place' || searchType === 'both') && (
               <SearchResults
                 results={searchResults}
                 onPlaceSelect={handlePlaceSelect}

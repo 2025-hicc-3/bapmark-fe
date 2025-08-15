@@ -15,14 +15,14 @@ function App() {
       <StampProvider>
         <PostProvider>
           <BrowserRouter>
-                                    <Routes>
-                          <Route path="/" element={<MapPage />} />
-                          <Route path="/map" element={<MapPage />} />
-                          <Route path="/board" element={<BoardPage />} />
-                          <Route path="/board/:id" element={<BoardDetailPage />} />
-                          <Route path="/maptest" element={<MapTestPage />} />
-                          <Route path="/apitest" element={<ApiTestPage />} />
-                        </Routes>
+            <Routes>
+              <Route path="/" element={<MapPage />} />
+              <Route path="/map" element={<MapPage />} />
+              <Route path="/board" element={<BoardPage />} />
+              <Route path="/board/:id" element={<BoardDetailPage />} />
+              <Route path="/maptest" element={<MapTestPage />} />
+              <Route path="/apitest" element={<ApiTestPage />} />
+            </Routes>
           </BrowserRouter>
         </PostProvider>
       </StampProvider>

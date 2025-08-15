@@ -13,6 +13,7 @@ const BoardPage = () => {
   const { posts, isLoading, error, refreshPostData } = usePost();
   const [filteredPosts, setFilteredPosts] = useState(posts);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   const handleWriteButtonClick = () => {
     setIsModalOpen(true);
@@ -53,11 +54,65 @@ const BoardPage = () => {
     setFilteredPosts(filtered);
   };
 
+  // 게시글 검색 처리
+  const handlePostSearch = async (keyword: string) => {
+    setSearchKeyword(keyword);
+
+    if (!keyword.trim()) {
+      // 빈 검색어일 때는 모든 게시글 표시
+      setFilteredPosts(posts);
+      return;
+    }
+
+    try {
+      // API를 통한 게시글 검색
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/posts/search?keyword=${encodeURIComponent(keyword)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.ok) {
+        const searchResults = await response.json();
+        setFilteredPosts(searchResults);
+      } else {
+        console.error('게시글 검색 실패:', response.status);
+        // API 검색 실패 시 로컬 필터링으로 대체
+        const filtered = posts.filter(
+          (post) =>
+            post.title.toLowerCase().includes(keyword.toLowerCase()) ||
+            post.content.toLowerCase().includes(keyword.toLowerCase()) ||
+            post.address.toLowerCase().includes(keyword.toLowerCase())
+        );
+        setFilteredPosts(filtered);
+      }
+    } catch (error) {
+      console.error('게시글 검색 오류:', error);
+      // 오류 발생 시 로컬 필터링으로 대체
+      const filtered = posts.filter(
+        (post) =>
+          post.title.toLowerCase().includes(keyword.toLowerCase()) ||
+          post.content.toLowerCase().includes(keyword.toLowerCase()) ||
+          post.address.toLowerCase().includes(keyword.toLowerCase())
+      );
+      setFilteredPosts(filtered);
+    }
+  };
+
   // 로딩 상태 표시
   if (isLoading) {
     return (
       <div className="h-screen flex flex-col">
-        <Header showSearch={true} onPlaceSelect={handlePlaceSelect} />
+        <Header
+          showSearch={true}
+          searchType="both"
+          onPlaceSelect={handlePlaceSelect}
+          onPostSearch={handlePostSearch}
+        />
         <main className="main-content bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -73,11 +128,16 @@ const BoardPage = () => {
   if (error) {
     return (
       <div className="h-screen flex flex-col">
-        <Header showSearch={true} onPlaceSelect={handlePlaceSelect} />
+        <Header
+          showSearch={true}
+          searchType="both"
+          onPlaceSelect={handlePlaceSelect}
+          onPostSearch={handlePostSearch}
+        />
         <main className="main-content bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            <h1 className="text-xl font-semibold text-gray-900 mb-4">
               데이터 로드 실패
             </h1>
             <p className="text-gray-600 mb-4">{error}</p>
@@ -97,7 +157,12 @@ const BoardPage = () => {
   return (
     <div className="h-screen flex flex-col">
       {/* 헤더 */}
-      <Header showSearch={true} onPlaceSelect={handlePlaceSelect} />
+      <Header
+        showSearch={true}
+        searchType="both"
+        onPlaceSelect={handlePlaceSelect}
+        onPostSearch={handlePostSearch}
+      />
 
       {/* 메인 콘텐츠 영역 */}
       <main className="main-content bg-gray-50">
@@ -110,7 +175,21 @@ const BoardPage = () => {
               ))
             ) : (
               <div className="text-center py-8 text-gray-500">
-                게시글이 없습니다.
+                {searchKeyword ? (
+                  <>
+                    <div className="text-4xl mb-2">🔍</div>
+                    <p className="font-medium mb-1">검색 결과가 없습니다</p>
+                    <p className="text-sm">
+                      "{searchKeyword}"에 대한 검색 결과가 없습니다.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-4xl mb-2">📝</div>
+                    <p className="font-medium mb-1">게시글이 없습니다</p>
+                    <p className="text-sm">첫 번째 게시글을 작성해보세요!</p>
+                  </>
+                )}
               </div>
             )}
           </div>
