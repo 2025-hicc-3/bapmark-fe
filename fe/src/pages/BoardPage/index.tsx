@@ -177,7 +177,6 @@ const BoardPage = () => {
               <div className="text-center py-8 text-gray-500">
                 {searchKeyword ? (
                   <>
-                    <div className="text-4xl mb-2">🔍</div>
                     <p className="font-medium mb-1">검색 결과가 없습니다</p>
                     <p className="text-sm">
                       "{searchKeyword}"에 대한 검색 결과가 없습니다.
@@ -185,9 +184,7 @@ const BoardPage = () => {
                   </>
                 ) : (
                   <>
-                    <div className="text-4xl mb-2">📝</div>
                     <p className="font-medium mb-1">게시글이 없습니다</p>
-                    <p className="text-sm">첫 번째 게시글을 작성해보세요!</p>
                   </>
                 )}
               </div>
